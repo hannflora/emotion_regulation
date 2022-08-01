@@ -1,0 +1,51 @@
+---
+title: "01_data_processing"
+output: html_notebook
+---
+
+# loading packages
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(psych))
+```
+
+
+# reading dataset
+```{r}
+dat_cleaned <- read_csv("data/data_cleaned.csv")
+```
+
+
+# reordering and renaming variables
+```{r}
+# reordering variables
+dat_cleaned <- dat_cleaned %>% 
+  select(id = id_emo, day, beep, age, gender, edu, date_emotics, date_diary, diary_counter,
+         sad:event_pleasantness, #esm
+         cerq1:cerq36, sb_cerq:ob_cerq, # cross-sectional
+         anxiety_1, anxiety_2, anxiety_3, anxiety_4, anxiety_5, depression_1:depression_3, depression_4, depression_5, depression_6:depression_10, depression_11:extra_neg_event)
+
+# renaming variables for consistency
+dat_cleaned <- dat_cleaned %>% 
+  rename_at(vars(starts_with("cerq")), funs(str_replace(., "cerq", "cerq_")))
+```
+
+
+# filling missing values in cross-sectional variables
+```{r}
+dat_cleaned <- dat_cleaned %>%
+  group_by(id) %>% 
+  fill(c(sb_cerq:ob_cerq), .direction = "updown") %>% 
+  ungroup()
+```
+
+
+# writing dat_cleaned into .csv file
+
+```{r}
+dat_cleaned %>% 
+  write_csv("data/data_processed.csv")
+```
+
