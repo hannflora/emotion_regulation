@@ -23,7 +23,7 @@ dat_cleaned <- read_csv("data/data_cleaned.csv")
 # reordering variables
 dat_cleaned <- dat_cleaned %>% 
   select(id = id_emo, day, beep, age, gender, edu, date_emotics, date_diary, diary_counter,
-         sad:event_pleasantness, #esm
+         sad:subc_psycho, cheerful = cheerfull, irritated:event_pleasantness, #esm
          cerq1:cerq36, sb_cerq:ob_cerq, # cross-sectional
          anxiety_1, anxiety_2, anxiety_3, anxiety_4, anxiety_5, depression_1:depression_3, depression_4, depression_5, depression_6:depression_10, depression_11:extra_neg_event)
 
@@ -42,10 +42,81 @@ dat_cleaned <- dat_cleaned %>%
 ```
 
 
-# writing dat_cleaned into .csv file
+# filtering obeservations with missing ESM
+```{r}
+dat_cleaned <- dat_cleaned %>% 
+  filter(!is.na(date_emotics))
+```
 
+
+# parallel analysis of affective states
+```{r}
+prin <- 
+  dat_cleaned %>%
+  select(sad, calm, afraid, unrested, enthusiastic, angry, worried, cheerful, irritated, active)
+
+(parallel <- fa.parallel(prin, fm = "pa"))
+
+(principal <- 
+    psych::principal(prin, nfactors = 2, rotate = "oblimin"))
+
+# binding component scores to dataset
+dat_cleaned <- 
+  dat_cleaned %>%
+  cbind(as.data.frame(principal$scores)) %>%
+  mutate(negaff = TC1,
+         posaff = TC2) %>% 
+  select(-TC1, -TC2)
+```
+
+# centering metrics within- and between individuals
+```{r}
+# reversing event pleasantness to event unpleasantness
+dat_cleaned <-
+  dat_cleaned %>% 
+  mutate(event_unpleasantness = 8-event_pleasantness) %>% 
+  select(-event_pleasantness)
+
+
+# within-person centering of NA and event unpleasantness
+dat_cleaned <-
+  dat_cleaned %>% 
+  group_by(id) %>%
+  mutate_at(vars(negaff, posaff, event_unpleasantness),
+            .funs = list(centered = ~ scale(., scale = F, center = T))) %>% 
+  distinct()
+
+
+# between-level means
+dat_cleaned <-
+  dat_cleaned %>%
+  group_by(id) %>%
+  mutate_at(vars(negaff,
+                 posaff,
+                 event_unpleasantness),
+            .funs = list(mean = ~ mean(., na.rm = T))) %>%
+  ungroup()
+
+# grand-mean centering
+dat_cleaned <- dat_cleaned %>%
+  mutate(negaff_mean_grand_centered = scale(negaff_mean, center = T, scale = F)
+  ...
+  ...
+  ...
+```
+
+
+# selecting model-relevant variables
+```{r}
+dat_model <- dat_cleaned %>% 
+  select()
+  
+```
+
+
+# writing dat_cleaned into .csv file
 ```{r}
 dat_cleaned %>% 
-  write_csv("data/data_processed.csv")
+  write.csv("data/data_processed.csv", row.names = F)
 ```
 
