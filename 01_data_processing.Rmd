@@ -1,14 +1,21 @@
 ---
 title: "01_data_processing"
 output: html_notebook
+editor_options: 
+  chunk_output_type: inline
 ---
 
 # loading packages
 ```{r}
+
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(sjPlot))
 suppressPackageStartupMessages(library(lme4))
 suppressPackageStartupMessages(library(psych))
+suppressPackageStartupMessages(library(lavaan))
+suppressPackageStartupMessages(library(semTools))
+suppressPackageStartupMessages(library(semPlot))
+
 ```
 
 
@@ -99,10 +106,90 @@ dat_cleaned <-
 
 # grand-mean centering
 dat_cleaned <- dat_cleaned %>%
-  mutate(negaff_mean_grand_centered = scale(negaff_mean, center = T, scale = F)
-  ...
-  ...
-  ...
+  mutate(negaff_mean_grand_centered = scale(negaff_mean, center = T, scale = F))
+```
+
+# multilevel CFA for negative affective states
+
+```{r, warning = F}
+
+cfa_aff <-
+  dat_cleaned %>%
+  filter(!is.na(date_emotics)) %>%
+  select(id, date_emotics, beep, sad, afraid, unrested, irritated, angry) %>%
+  filter_at(vars(sad:angry), all_vars(!is.na(.))) %>%
+  distinct() %>%
+  ungroup()
+
+cfa_aff_syntax <- '
+
+  level: 1
+
+      NA_within =~ sad + afraid + unrested + angry
+      afraid ~~ angry
+
+  level: 2
+
+      NA_between =~ sad + afraid + unrested + angry
+'
+# "irritated" has been omitted from the analysis since it worsened the fit of the model
+
+fit <- cfa(model = cfa_aff_syntax, data = cfa_aff, cluster = "id", std.lv = TRUE, estimator = "ML")
+```
+
+```{r}
+fitMeasures(fit, c("chisq", "df", "pvalue", "cfi", "tli",
+                   "rmsea", "srmr_within", "srmr_between"))
+```
+
+```{r}
+summary(fit, fit.measures = TRUE, standardize = TRUE)
+```
+
+```{r}
+modificationindices(fit) %>%
+  select("lhs", "op", "rhs", "level", "mi") %>%
+  arrange(desc(mi)) %>%
+  # filter(level == 1) %>% 
+  head(n = 10) %>%
+  print()
+```
+
+```{r}
+# within-person factor loadings
+(inspect(fit, what = "std")$within$lambda)
+
+# between-person factor loadings
+(inspect(fit, what = "std")$id$lambda)
+
+# reliability of NA model
+(reliability(fit))
+```
+
+```{r}
+
+# between subject factor score-okat hozzáadni a within subject-ekhez
+
+dat_cfa_lev_2 <-
+  cfa_aff %>%
+  select(id) %>%
+  distinct() %>%
+  cbind(lavPredict(fit, newdata = cfa_aff[4:8], level = 2L))
+
+dat_cfa_lev_1 <-
+  cfa_aff %>%
+  cbind(lavPredict(fit, newdata = cfa_aff[4:8], level = 1L)) %>%
+  select(-c(sad:angry))
+
+dat_cfa <-
+  dat_cfa_lev_1 %>%
+  left_join(dat_cfa_lev_2, by = "id") %>%
+  mutate(NA_sum =  NA_within + NA_between)
+
+dat_cleaned <-
+  dat_cleaned %>%
+  left_join(dat_cfa, by = c("id", "date_emotics", "beep"))
+
 ```
 
 
