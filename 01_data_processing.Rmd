@@ -15,6 +15,7 @@ suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(library(lavaan))
 suppressPackageStartupMessages(library(semTools))
 suppressPackageStartupMessages(library(semPlot))
+suppressPackageStartupMessages(library(ltm))
 
 ```
 
@@ -29,7 +30,7 @@ dat_cleaned <- read_csv("data/data_cleaned.csv")
 ```{r}
 # reordering variables
 dat_cleaned <- dat_cleaned %>% 
-  select(id = id_emo, day, beep, age, gender, edu, date_emotics, date_diary, diary_counter,
+  dplyr::select(id = id_emo, day, beep, age, gender, edu, date_emotics, date_diary, diary_counter,
          sad:subc_psycho, cheerful = cheerfull, irritated:event_pleasantness, #esm
          cerq1:cerq36, sb_cerq:ob_cerq, # cross-sectional
          anxiety_1, anxiety_2, anxiety_3, anxiety_4, anxiety_5, depression_1:depression_3, depression_4, depression_5, depression_6:depression_10, depression_11:extra_neg_event)
@@ -60,7 +61,7 @@ dat_cleaned <- dat_cleaned %>%
 ```{r}
 prin <- 
   dat_cleaned %>%
-  select(sad, calm, afraid, unrested, enthusiastic, angry, worried, cheerful, irritated, active)
+  dplyr::select(sad, calm, afraid, unrested, enthusiastic, angry, worried, cheerful, irritated, active)
 
 (parallel <- fa.parallel(prin, fm = "pa"))
 
@@ -73,8 +74,9 @@ dat_cleaned <-
   cbind(as.data.frame(principal$scores)) %>%
   mutate(negaff = TC1,
          posaff = TC2) %>% 
-  select(-TC1, -TC2)
+  dplyr::select(-TC1, -TC2)
 ```
+
 
 # centering metrics within- and between individuals
 ```{r}
@@ -82,7 +84,7 @@ dat_cleaned <-
 dat_cleaned <-
   dat_cleaned %>% 
   mutate(event_unpleasantness = 8-event_pleasantness) %>% 
-  select(-event_pleasantness)
+  dplyr::select(-event_pleasantness)
 
 
 # within-person centering of NA and event unpleasantness
@@ -109,14 +111,14 @@ dat_cleaned <- dat_cleaned %>%
   mutate(negaff_mean_grand_centered = scale(negaff_mean, center = T, scale = F))
 ```
 
-# multilevel CFA for negative affective states
 
+# multilevel CFA for negative affective states
 ```{r, warning = F}
 
 cfa_aff <-
   dat_cleaned %>%
   filter(!is.na(date_emotics)) %>%
-  select(id, date_emotics, beep, sad, afraid, unrested, irritated, angry) %>%
+  dplyr::select(id, date_emotics, beep, sad, afraid, unrested, irritated, angry) %>%
   filter_at(vars(sad:angry), all_vars(!is.na(.))) %>%
   distinct() %>%
   ungroup()
@@ -148,7 +150,7 @@ summary(fit, fit.measures = TRUE, standardize = TRUE)
 
 ```{r}
 modificationindices(fit) %>%
-  select("lhs", "op", "rhs", "level", "mi") %>%
+  dplyr::select("lhs", "op", "rhs", "level", "mi") %>%
   arrange(desc(mi)) %>%
   # filter(level == 1) %>% 
   head(n = 10) %>%
@@ -172,14 +174,14 @@ modificationindices(fit) %>%
 
 dat_cfa_lev_2 <-
   cfa_aff %>%
-  select(id) %>%
+  dplyr::select(id) %>%
   distinct() %>%
   cbind(lavPredict(fit, newdata = cfa_aff[4:8], level = 2L))
 
 dat_cfa_lev_1 <-
   cfa_aff %>%
   cbind(lavPredict(fit, newdata = cfa_aff[4:8], level = 1L)) %>%
-  select(-c(sad:angry))
+  dplyr::select(-c(sad:angry))
 
 dat_cfa <-
   dat_cfa_lev_1 %>%
@@ -193,17 +195,27 @@ dat_cleaned <-
 ```
 
 
+# reliability of CERQ rumination scale
+```{r}
+dat_cleaned_cerq <- dat_cleaned %>%  
+  dplyr::select(cerq_3, cerq_12, cerq_21, cerq_30) %>% 
+  distinct()
+
+cronbach.alpha(dat_cleaned_cerq)
+```
+
+
 # selecting model-relevant variables
 ```{r}
-dat_model <- dat_cleaned %>% 
-  select()
+# dat_model <- dat_cleaned %>% 
+#   select()
   
 ```
 
 
 # writing dat_cleaned into .csv file
 ```{r}
-dat_cleaned %>% 
-  write.csv("data/data_processed.csv", row.names = F)
+# dat_cleaned %>% 
+#   write.csv("data/data_processed.csv", row.names = F)
 ```
 
