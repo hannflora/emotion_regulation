@@ -9,6 +9,7 @@ editor_options:
 ```{r}
 
 suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(sjPlot))
 suppressPackageStartupMessages(library(lme4))
 suppressPackageStartupMessages(library(psych))
@@ -111,6 +112,53 @@ dat_cleaned <- dat_cleaned %>%
   mutate(negaff_mean_grand_centered = scale(negaff_mean, center = T, scale = F))
 ```
 
+# CFA for rumination
+
+```{r}
+
+dat_cfa_rum <- 
+  dat_cleaned %>% 
+  dplyr::select(id, cerq_1, cerq_9, cerq_19, cerq_29) %>%
+  distinct()
+  
+
+cfa_rum <- 'rumination =~ cerq_1 + cerq_9 + cerq_19 + cerq_29'
+
+
+
+fit_rumi <- cfa(model = cfa_rum, data = dat_cfa_rum, std.lv = TRUE, estimator = "ML")
+  
+
+```
+
+```{r}
+fitMeasures(fit_rumi, c("chisq", "df", "pvalue", "cfi", "tli",
+                   "rmsea", "srmr"))
+```
+
+```{r}
+summary(fit_rumi, fit.measures = TRUE, standardize = TRUE)
+```
+
+```{r}
+# reliability of rimination factor (omega)
+(reliability(fit_rumi))
+```
+
+```{r}
+
+# add rumination between-subject factor scores to the main dataset
+
+scores_cfa_rumination <-
+  dat_cfa_rum %>%
+  distinct() %>%
+  cbind(lavPredict(fit_rumi, newdata = dat_cfa_rum[1:5]))
+
+dat_cleaned <-
+  dat_cleaned %>%
+  left_join(scores_cfa_rumination, by = c("id"))
+
+```
 
 # multilevel CFA for negative affective states
 ```{r, warning = F}
