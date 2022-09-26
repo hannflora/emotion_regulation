@@ -1,0 +1,19 @@
+---
+title: "05_models"
+output: html_notebook
+---
+
+# loading packages
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(psych))
+suppressPackageStartupMessages(library(matrixStats))
+```
+
+# reading dataset
+```{r}
+dat_model <- read_csv("data/data_model.csv")
+```
+

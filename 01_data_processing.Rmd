@@ -16,7 +16,7 @@ suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(library(lavaan))
 suppressPackageStartupMessages(library(semTools))
 suppressPackageStartupMessages(library(semPlot))
-suppressPackageStartupMessages(library(ltm))
+# suppressPackageStartupMessages(library(ltm))
 
 ```
 
@@ -112,8 +112,8 @@ dat_cleaned <- dat_cleaned %>%
   mutate(negaff_mean_grand_centered = scale(negaff_mean, center = T, scale = F))
 ```
 
-# CFA for rumination
 
+# CFA for rumination
 ```{r}
 
 dat_cfa_rum <- 
@@ -141,12 +141,11 @@ summary(fit_rumi, fit.measures = TRUE, standardize = TRUE)
 ```
 
 ```{r}
-# reliability of rimination factor (omega)
+# reliability of rumination factor (omega)
 (reliability(fit_rumi))
 ```
 
 ```{r}
-
 # add rumination between-subject factor scores to the main dataset
 
 scores_cfa_rumination <-
@@ -157,12 +156,11 @@ scores_cfa_rumination <-
 dat_cleaned <-
   dat_cleaned %>%
   left_join(scores_cfa_rumination, by = c("id"))
-
 ```
+
 
 # multilevel CFA for negative affective states
 ```{r, warning = F}
-
 cfa_aff <-
   dat_cleaned %>%
   filter(!is.na(date_emotics)) %>%
@@ -217,7 +215,6 @@ modificationindices(fit) %>%
 ```
 
 ```{r}
-
 # between subject factor score-okat hozzáadni a within subject-ekhez
 
 dat_cfa_lev_2 <-
@@ -239,31 +236,37 @@ dat_cfa <-
 dat_cleaned <-
   dat_cleaned %>%
   left_join(dat_cfa, by = c("id", "date_emotics", "beep"))
-
 ```
 
 
 # reliability of CERQ rumination scale
 ```{r}
-dat_cleaned_cerq <- dat_cleaned %>%  
-  dplyr::select(cerq_3, cerq_12, cerq_21, cerq_30) %>% 
-  distinct()
+# dat_cleaned_cerq <- dat_cleaned %>%  
+#   dplyr::select(cerq_3, cerq_12, cerq_21, cerq_30) %>% 
+#   distinct()
+# 
+# cronbach.alpha(dat_cleaned_cerq)
+```
 
-cronbach.alpha(dat_cleaned_cerq)
+
+# computing aggregated mean of state rumintaion
+```{r}
+dat_cleaned <- dat_cleaned %>% 
+  group_by(id) %>% 
+  mutate(mean_state_rumi = mean(regu_rumination))
 ```
 
 
 # selecting model-relevant variables
 ```{r}
-# dat_model <- dat_cleaned %>% 
-#   select()
-  
+dat_model <- dat_cleaned %>%
+  select(id:edu, regu_rumination, rum_cerq, negaff:negaff_mean_grand_centered, rumination:mean_state_rumi)
 ```
 
 
-# writing dat_cleaned into .csv file
+# writing dat_model into .csv file
 ```{r}
-# dat_cleaned %>% 
-#   write.csv("data/data_processed.csv", row.names = F)
+dat_model %>%
+  write.csv("data/data_model.csv", row.names = F)
 ```
 
