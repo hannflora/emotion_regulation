@@ -10,6 +10,7 @@ suppressPackageStartupMessages(library(sjPlot))
 suppressPackageStartupMessages(library(lme4))
 suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(library(matrixStats))
+suppressPackageStartupMessages(library(performance))
 ```
 
 # reading dataset
@@ -17,3 +18,65 @@ suppressPackageStartupMessages(library(matrixStats))
 dat_model <- read_csv("data/data_model.csv")
 ```
 
+
+# baseline model
+```{r}
+baseline_model <-
+  
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered +
+      (event_unpleasantness_centered | id), data = dat_model)
+
+summary(baseline_model)
+tab_model(baseline_model)
+AIC(baseline_model)
+BIC(baseline_model)
+# check_model(baseline_model)
+```
+
+
+
+# trait rumination
+```{r}
+trait_model <-
+  
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered * trait_rumination + 
+      (event_unpleasantness_centered | id), data = dat_model)
+
+tab_model(trait_model)
+AIC(trait_model)
+BIC(trait_model)
+# check_model(trait_model)
+```
+
+
+
+# mean state rumination
+```{r}
+mean_state <-
+  
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered * mean_state_rumi_grand_centered + 
+      (event_unpleasantness_centered | id), data = dat_model)
+
+tab_model(mean_state)
+AIC(mean_state)
+BIC(mean_state)
+# check_model(mean_state)
+```
+
+
+# state rumination
+```{r}
+state <-
+  
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered * rumination_centered + 
+      (event_unpleasantness_centered * rumination_centered | id), data = dat_model)
+
+tab_model(state)
+AIC(state)
+BIC(state)
+# check_model(state)
+```

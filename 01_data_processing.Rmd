@@ -18,6 +18,8 @@ suppressPackageStartupMessages(library(semTools))
 suppressPackageStartupMessages(library(semPlot))
 # suppressPackageStartupMessages(library(ltm))
 
+options(scipen = 999)
+
 ```
 
 
@@ -54,27 +56,27 @@ dat_cleaned <- dat_cleaned %>%
 # filtering obeservations with missing ESM
 ```{r}
 dat_cleaned <- dat_cleaned %>% 
-  filter(!is.na(date_emotics))
+  filter(!is.na(date_emotics) & !is.na(day))
 ```
 
 
 # parallel analysis of affective states
 ```{r}
-prin <- 
+prin <-
   dat_cleaned %>%
   dplyr::select(sad, calm, afraid, unrested, enthusiastic, angry, worried, cheerful, irritated, active)
 
 (parallel <- fa.parallel(prin, fm = "pa"))
 
-(principal <- 
+(principal <-
     psych::principal(prin, nfactors = 2, rotate = "oblimin"))
 
 # binding component scores to dataset
-dat_cleaned <- 
+dat_cleaned <-
   dat_cleaned %>%
   cbind(as.data.frame(principal$scores)) %>%
   mutate(negaff = TC1,
-         posaff = TC2) %>% 
+         posaff = TC2) %>%
   dplyr::select(-TC1, -TC2)
 ```
 
@@ -108,8 +110,8 @@ dat_cleaned <-
   ungroup()
 
 # grand-mean centering
-dat_cleaned <- dat_cleaned %>%
-  mutate(negaff_mean_grand_centered = scale(negaff_mean, center = T, scale = F))
+# dat_cleaned <- dat_cleaned %>%
+#   mutate(negaff_mean_grand_centered = scale(negaff_mean, center = T, scale = F))
 ```
 
 
@@ -151,7 +153,8 @@ summary(fit_rumi, fit.measures = TRUE, standardize = TRUE)
 scores_cfa_rumination <-
   dat_cfa_rum %>%
   distinct() %>%
-  cbind(lavPredict(fit_rumi, newdata = dat_cfa_rum[1:5]))
+  cbind(lavPredict(fit_rumi, newdata = dat_cfa_rum[1:5])) %>% 
+  select(id, rumination)
 
 dat_cleaned <-
   dat_cleaned %>%
@@ -253,14 +256,21 @@ dat_cleaned <-
 ```{r}
 dat_cleaned <- dat_cleaned %>% 
   group_by(id) %>% 
-  mutate(mean_state_rumi = mean(regu_rumination))
+  mutate(mean_state_rumi = mean(regu_rumination, na.rm = TRUE),
+         rumination_centered = scale(regu_rumination, center = T, scale = F)
+         ) %>% 
+  ungroup()
+
+dat_cleaned <- dat_cleaned %>% 
+  mutate(mean_state_rumi_grand_centered = scale(mean_state_rumi, center = T, scale = F))
 ```
 
 
 # selecting model-relevant variables
 ```{r}
+
 dat_model <- dat_cleaned %>%
-  select(id:edu, regu_rumination, rum_cerq, negaff:negaff_mean_grand_centered, rumination:mean_state_rumi)
+  select(id:edu, event_unpleasantness_centered, trait_rumination = rumination, NA_within:rumination_centered, mean_state_rumi_grand_centered)
 ```
 
 
