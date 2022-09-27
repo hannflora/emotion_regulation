@@ -13,6 +13,7 @@ suppressPackageStartupMessages(library(matrixStats))
 suppressPackageStartupMessages(library(performance))
 ```
 
+
 # reading dataset
 ```{r}
 dat_model <- read_csv("data/data_model.csv")
@@ -35,7 +36,6 @@ BIC(baseline_model)
 ```
 
 
-
 # trait rumination
 ```{r}
 trait_model <-
@@ -49,7 +49,6 @@ AIC(trait_model)
 BIC(trait_model)
 # check_model(trait_model)
 ```
-
 
 
 # mean state rumination
@@ -69,14 +68,14 @@ BIC(mean_state)
 
 # state rumination
 ```{r}
-state <-
+state_model <-
   
   lmer(NA_sum ~ age + gender + beep + day + 
       event_unpleasantness_centered * rumination_centered + 
       (event_unpleasantness_centered * rumination_centered | id), data = dat_model)
 
-tab_model(state)
-AIC(state)
-BIC(state)
-# check_model(state)
+tab_model(state_model)
+AIC(state_model)
+BIC(state_model)
+# check_model(state_model)
 ```

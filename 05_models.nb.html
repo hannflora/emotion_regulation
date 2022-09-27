@@ -1790,13 +1790,6 @@ suppressPackageStartupMessages(library(matrixStats))
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGF0X21vZGVsIDwtIHJlYWRfY3N2KFwiZGF0YS9kYXRhX21vZGVsLmNzdlwiKVxuYGBgIn0= -->
 <pre class="r"><code>dat_model &lt;- read_csv(&quot;data/data_model.csv&quot;)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMTQyNjUgQ29sdW1uczogMTTilIDilIAgQ29sdW1uIHNwZWNpZmljYXRpb24g4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAXG5EZWxpbWl0ZXI6IFwiLFwiXG5kYmwgKDE0KTogaWQsIGRheSwgYmVlcCwgYWdlLCBnZW5kZXIsIGVkdSwgZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQsIHRyYWl0X3J1bWluYXRpb24sIE5BX3dpdGhpbiwgTkFfYmV0d2VlLi4uXG7ihLkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG7ihLkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
-<pre><code>Rows: 14265 Columns: 14── Column specification ────────────────────────────────────────────────────────────────────────────────────────────
-Delimiter: &quot;,&quot;
-dbl (14): id, day, beep, age, gender, edu, event_unpleasantness_centered, trait_rumination, NA_within, NA_betwee...
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
@@ -1804,19 +1797,19 @@ dbl (14): id, day, beep, age, gender, edu, event_unpleasantness_centered, trait_
 <h1>baseline model</h1>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuQUlDKGJhc2VsaW5lX21vZGVsKVxuXG5gYGAifQ== -->
-<pre class="r"><code>AIC(baseline_model)
-</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYmFzZWxpbmVfbW9kZWwgPC1cbiAgXG4gIGxtZXIoTkFfc3VtIH4gYWdlICsgZ2VuZGVyICsgYmVlcCArIGRheSArIFxuICAgICAgZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgK1xuICAgICAgKGV2ZW50X3VucGxlYXNhbnRuZXNzX2NlbnRlcmVkIHwgaWQpLCBkYXRhID0gZGF0X21vZGVsKVxuXG5zdW1tYXJ5KGJhc2VsaW5lX21vZGVsKVxudGFiX21vZGVsKGJhc2VsaW5lX21vZGVsKVxuQUlDKGJhc2VsaW5lX21vZGVsKVxuQklDKGJhc2VsaW5lX21vZGVsKVxuIyBjaGVja19tb2RlbChiYXNlbGluZV9tb2RlbClcbmBgYCJ9 -->
+<pre class="r"><code>baseline_model &lt;-
+  
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered +
+      (event_unpleasantness_centered | id), data = dat_model)
+
+summary(baseline_model)
+tab_model(baseline_model)
+AIC(baseline_model)
+BIC(baseline_model)
+# check_model(baseline_model)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDMzNTU2LjA1XG4ifQ== -->
-<pre><code>[1] 33556.05</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuQklDKGJhc2VsaW5lX21vZGVsKVxuYGBgIn0= -->
-<pre class="r"><code>BIC(baseline_model)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDMzNjMxLjdcbiJ9 -->
-<pre><code>[1] 33631.7</code></pre>
-<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
@@ -1831,19 +1824,18 @@ dbl (14): id, day, beep, age, gender, edu, event_unpleasantness_centered, trait_
 <h1>mean state rumination</h1>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuQUlDKG1lYW5fc3RhdGUpXG5cbmBgYCJ9 -->
-<pre class="r"><code>AIC(mean_state)
-</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubWVhbl9zdGF0ZSA8LVxuICBcbiAgbG1lcihOQV9zdW0gfiBhZ2UgKyBnZW5kZXIgKyBiZWVwICsgZGF5ICsgXG4gICAgICBldmVudF91bnBsZWFzYW50bmVzc19jZW50ZXJlZCAqIG1lYW5fc3RhdGVfcnVtaV9ncmFuZF9jZW50ZXJlZCArIFxuICAgICAgKGV2ZW50X3VucGxlYXNhbnRuZXNzX2NlbnRlcmVkIHwgaWQpLCBkYXRhID0gZGF0X21vZGVsKVxuXG50YWJfbW9kZWwobWVhbl9zdGF0ZSlcbkFJQyhtZWFuX3N0YXRlKVxuQklDKG1lYW5fc3RhdGUpXG4jIGNoZWNrX21vZGVsKG1lYW5fc3RhdGUpXG5gYGAifQ== -->
+<pre class="r"><code>mean_state &lt;-
+  
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered * mean_state_rumi_grand_centered + 
+      (event_unpleasantness_centered | id), data = dat_model)
+
+tab_model(mean_state)
+AIC(mean_state)
+BIC(mean_state)
+# check_model(mean_state)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDMzNDAzLjk4XG4ifQ== -->
-<pre><code>[1] 33403.98</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuQklDKG1lYW5fc3RhdGUpXG5gYGAifQ== -->
-<pre class="r"><code>BIC(mean_state)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDMzNDk0Ljc2XG4ifQ== -->
-<pre><code>[1] 33494.76</code></pre>
-<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
@@ -1851,32 +1843,22 @@ dbl (14): id, day, beep, age, gender, edu, event_unpleasantness_centered, trait_
 <h1>state rumination</h1>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3RhdGUgPC1cbiAgXG4gIGxtZXIoTkFfc3VtIH4gYWdlICsgZ2VuZGVyICsgYmVlcCArIGRheSArIFxuICAgICAgZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgKiBydW1pbmF0aW9uX2NlbnRlcmVkICsgXG4gICAgICAoZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgKiBydW1pbmF0aW9uX2NlbnRlcmVkIHwgaWQpLCBkYXRhID0gZGF0X21vZGVsKVxuXG50YWJfbW9kZWwoc3RhdGUpXG5BSUMoc3RhdGUpXG5gYGAifQ== -->
-<pre class="r"><code>state &lt;-
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3RhdGVfbW9kZWwgPC1cbiAgXG4gIGxtZXIoTkFfc3VtIH4gYWdlICsgZ2VuZGVyICsgYmVlcCArIGRheSArIFxuICAgICAgZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgKiBydW1pbmF0aW9uX2NlbnRlcmVkICsgXG4gICAgICAoZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgKiBydW1pbmF0aW9uX2NlbnRlcmVkIHwgaWQpLCBkYXRhID0gZGF0X21vZGVsKVxuXG50YWJfbW9kZWwoc3RhdGVfbW9kZWwpXG5BSUMoc3RhdGVfbW9kZWwpXG5CSUMoc3RhdGVfbW9kZWwpXG4jIGNoZWNrX21vZGVsKHN0YXRlX21vZGVsKVxuYGBgIn0= -->
+<pre class="r"><code>state_model &lt;-
   
   lmer(NA_sum ~ age + gender + beep + day + 
       event_unpleasantness_centered * rumination_centered + 
       (event_unpleasantness_centered * rumination_centered | id), data = dat_model)
 
-tab_model(state)
-AIC(state)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDMxMDMwLjY5XG4ifQ== -->
-<pre><code>[1] 31030.69</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuQklDKHN0YXRlKVxuYGBgIn0= -->
-<pre class="r"><code>BIC(state)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDMxMTc0LjQzXG4ifQ== -->
-<pre><code>[1] 31174.43</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBjaGVja19tb2RlbChzdGF0ZSlcbmBgYCJ9 -->
-<pre class="r"><code># check_model(state)</code></pre>
+tab_model(state_model)
+AIC(state_model)
+BIC(state_model)
+# check_model(state_model)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiMDVfbW9kZWxzIgpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sKLS0tCgojIGxvYWRpbmcgcGFja2FnZXMKYGBge3J9CnN1cHByZXNzUGFja2FnZVN0YXJ0dXBNZXNzYWdlcyhsaWJyYXJ5KHRpZHl2ZXJzZSkpCnN1cHByZXNzUGFja2FnZVN0YXJ0dXBNZXNzYWdlcyhsaWJyYXJ5KHNqUGxvdCkpCnN1cHByZXNzUGFja2FnZVN0YXJ0dXBNZXNzYWdlcyhsaWJyYXJ5KGxtZTQpKQpzdXBwcmVzc1BhY2thZ2VTdGFydHVwTWVzc2FnZXMobGlicmFyeShwc3ljaCkpCnN1cHByZXNzUGFja2FnZVN0YXJ0dXBNZXNzYWdlcyhsaWJyYXJ5KG1hdHJpeFN0YXRzKSkKc3VwcHJlc3NQYWNrYWdlU3RhcnR1cE1lc3NhZ2VzKGxpYnJhcnkocGVyZm9ybWFuY2UpKQpgYGAKCiMgcmVhZGluZyBkYXRhc2V0CmBgYHtyfQpkYXRfbW9kZWwgPC0gcmVhZF9jc3YoImRhdGEvZGF0YV9tb2RlbC5jc3YiKQpgYGAKCgojIGJhc2VsaW5lIG1vZGVsCmBgYHtyfQpiYXNlbGluZV9tb2RlbCA8LQogIAogIGxtZXIoTkFfc3VtIH4gYWdlICsgZ2VuZGVyICsgYmVlcCArIGRheSArIAogICAgICBldmVudF91bnBsZWFzYW50bmVzc19jZW50ZXJlZCArCiAgICAgIChldmVudF91bnBsZWFzYW50bmVzc19jZW50ZXJlZCB8IGlkKSwgZGF0YSA9IGRhdF9tb2RlbCkKCnN1bW1hcnkoYmFzZWxpbmVfbW9kZWwpCnRhYl9tb2RlbChiYXNlbGluZV9tb2RlbCkKQUlDKGJhc2VsaW5lX21vZGVsKQpCSUMoYmFzZWxpbmVfbW9kZWwpCiMgY2hlY2tfbW9kZWwoYmFzZWxpbmVfbW9kZWwpCmBgYAoKCgojIHRyYWl0IHJ1bWluYXRpb24KYGBge3J9CnRyYWl0X21vZGVsIDwtCiAgCiAgbG1lcihOQV9zdW0gfiBhZ2UgKyBnZW5kZXIgKyBiZWVwICsgZGF5ICsgCiAgICAgIGV2ZW50X3VucGxlYXNhbnRuZXNzX2NlbnRlcmVkICogdHJhaXRfcnVtaW5hdGlvbiArIAogICAgICAoZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgfCBpZCksIGRhdGEgPSBkYXRfbW9kZWwpCgp0YWJfbW9kZWwodHJhaXRfbW9kZWwpCkFJQyh0cmFpdF9tb2RlbCkKQklDKHRyYWl0X21vZGVsKQojIGNoZWNrX21vZGVsKHRyYWl0X21vZGVsKQpgYGAKCgoKIyBtZWFuIHN0YXRlIHJ1bWluYXRpb24KYGBge3J9Cm1lYW5fc3RhdGUgPC0KICAKICBsbWVyKE5BX3N1bSB+IGFnZSArIGdlbmRlciArIGJlZXAgKyBkYXkgKyAKICAgICAgZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgKiBtZWFuX3N0YXRlX3J1bWlfZ3JhbmRfY2VudGVyZWQgKyAKICAgICAgKGV2ZW50X3VucGxlYXNhbnRuZXNzX2NlbnRlcmVkIHwgaWQpLCBkYXRhID0gZGF0X21vZGVsKQoKdGFiX21vZGVsKG1lYW5fc3RhdGUpCkFJQyhtZWFuX3N0YXRlKQpCSUMobWVhbl9zdGF0ZSkKIyBjaGVja19tb2RlbChtZWFuX3N0YXRlKQpgYGAKCgojIHN0YXRlIHJ1bWluYXRpb24KYGBge3J9CnN0YXRlIDwtCiAgCiAgbG1lcihOQV9zdW0gfiBhZ2UgKyBnZW5kZXIgKyBiZWVwICsgZGF5ICsgCiAgICAgIGV2ZW50X3VucGxlYXNhbnRuZXNzX2NlbnRlcmVkICogcnVtaW5hdGlvbl9jZW50ZXJlZCArIAogICAgICAoZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgKiBydW1pbmF0aW9uX2NlbnRlcmVkIHwgaWQpLCBkYXRhID0gZGF0X21vZGVsKQoKdGFiX21vZGVsKHN0YXRlKQpBSUMoc3RhdGUpCkJJQyhzdGF0ZSkKIyBjaGVja19tb2RlbChzdGF0ZSkKYGBgCg==</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiMDVfbW9kZWxzIgpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sKLS0tCgojIGxvYWRpbmcgcGFja2FnZXMKYGBge3J9CnN1cHByZXNzUGFja2FnZVN0YXJ0dXBNZXNzYWdlcyhsaWJyYXJ5KHRpZHl2ZXJzZSkpCnN1cHByZXNzUGFja2FnZVN0YXJ0dXBNZXNzYWdlcyhsaWJyYXJ5KHNqUGxvdCkpCnN1cHByZXNzUGFja2FnZVN0YXJ0dXBNZXNzYWdlcyhsaWJyYXJ5KGxtZTQpKQpzdXBwcmVzc1BhY2thZ2VTdGFydHVwTWVzc2FnZXMobGlicmFyeShwc3ljaCkpCnN1cHByZXNzUGFja2FnZVN0YXJ0dXBNZXNzYWdlcyhsaWJyYXJ5KG1hdHJpeFN0YXRzKSkKc3VwcHJlc3NQYWNrYWdlU3RhcnR1cE1lc3NhZ2VzKGxpYnJhcnkocGVyZm9ybWFuY2UpKQpgYGAKCgojIHJlYWRpbmcgZGF0YXNldApgYGB7cn0KZGF0X21vZGVsIDwtIHJlYWRfY3N2KCJkYXRhL2RhdGFfbW9kZWwuY3N2IikKYGBgCgoKIyBiYXNlbGluZSBtb2RlbApgYGB7cn0KYmFzZWxpbmVfbW9kZWwgPC0KICAKICBsbWVyKE5BX3N1bSB+IGFnZSArIGdlbmRlciArIGJlZXAgKyBkYXkgKyAKICAgICAgZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgKwogICAgICAoZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgfCBpZCksIGRhdGEgPSBkYXRfbW9kZWwpCgpzdW1tYXJ5KGJhc2VsaW5lX21vZGVsKQp0YWJfbW9kZWwoYmFzZWxpbmVfbW9kZWwpCkFJQyhiYXNlbGluZV9tb2RlbCkKQklDKGJhc2VsaW5lX21vZGVsKQojIGNoZWNrX21vZGVsKGJhc2VsaW5lX21vZGVsKQpgYGAKCgojIHRyYWl0IHJ1bWluYXRpb24KYGBge3J9CnRyYWl0X21vZGVsIDwtCiAgCiAgbG1lcihOQV9zdW0gfiBhZ2UgKyBnZW5kZXIgKyBiZWVwICsgZGF5ICsgCiAgICAgIGV2ZW50X3VucGxlYXNhbnRuZXNzX2NlbnRlcmVkICogdHJhaXRfcnVtaW5hdGlvbiArIAogICAgICAoZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgfCBpZCksIGRhdGEgPSBkYXRfbW9kZWwpCgp0YWJfbW9kZWwodHJhaXRfbW9kZWwpCkFJQyh0cmFpdF9tb2RlbCkKQklDKHRyYWl0X21vZGVsKQojIGNoZWNrX21vZGVsKHRyYWl0X21vZGVsKQpgYGAKCgojIG1lYW4gc3RhdGUgcnVtaW5hdGlvbgpgYGB7cn0KbWVhbl9zdGF0ZSA8LQogIAogIGxtZXIoTkFfc3VtIH4gYWdlICsgZ2VuZGVyICsgYmVlcCArIGRheSArIAogICAgICBldmVudF91bnBsZWFzYW50bmVzc19jZW50ZXJlZCAqIG1lYW5fc3RhdGVfcnVtaV9ncmFuZF9jZW50ZXJlZCArIAogICAgICAoZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgfCBpZCksIGRhdGEgPSBkYXRfbW9kZWwpCgp0YWJfbW9kZWwobWVhbl9zdGF0ZSkKQUlDKG1lYW5fc3RhdGUpCkJJQyhtZWFuX3N0YXRlKQojIGNoZWNrX21vZGVsKG1lYW5fc3RhdGUpCmBgYAoKCiMgc3RhdGUgcnVtaW5hdGlvbgpgYGB7cn0Kc3RhdGVfbW9kZWwgPC0KICAKICBsbWVyKE5BX3N1bSB+IGFnZSArIGdlbmRlciArIGJlZXAgKyBkYXkgKyAKICAgICAgZXZlbnRfdW5wbGVhc2FudG5lc3NfY2VudGVyZWQgKiBydW1pbmF0aW9uX2NlbnRlcmVkICsgCiAgICAgIChldmVudF91bnBsZWFzYW50bmVzc19jZW50ZXJlZCAqIHJ1bWluYXRpb25fY2VudGVyZWQgfCBpZCksIGRhdGEgPSBkYXRfbW9kZWwpCgp0YWJfbW9kZWwoc3RhdGVfbW9kZWwpCkFJQyhzdGF0ZV9tb2RlbCkKQklDKHN0YXRlX21vZGVsKQojIGNoZWNrX21vZGVsKHN0YXRlX21vZGVsKQpgYGAK</div>
 
 
 
