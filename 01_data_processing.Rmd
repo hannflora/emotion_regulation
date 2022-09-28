@@ -24,16 +24,16 @@ options(scipen = 999)
 
 
 # reading dataset
-```{r}
+```{r message=FALSE, warning=FALSE}
 dat_cleaned <- read_csv("data/data_cleaned.csv")
 ```
 
 
 # reordering and renaming variables
-```{r}
+```{r warning=FALSE}
 # reordering variables
 dat_cleaned <- dat_cleaned %>% 
-  dplyr::select(id = id_emo, day, beep, age, gender, edu, date_emotics, date_diary, diary_counter,
+  select(id = id_emo, day, beep, age, gender, edu, date_emotics, date_diary, diary_counter,
          sad:subc_psycho, cheerful = cheerfull, irritated:event_pleasantness, #esm
          cerq1:cerq36, sb_cerq:ob_cerq, # cross-sectional
          anxiety_1, anxiety_2, anxiety_3, anxiety_4, anxiety_5, depression_1:depression_3, depression_4, depression_5, depression_6:depression_10, depression_11:extra_neg_event)
@@ -64,7 +64,7 @@ dat_cleaned <- dat_cleaned %>%
 ```{r}
 prin <-
   dat_cleaned %>%
-  dplyr::select(sad, calm, afraid, unrested, enthusiastic, angry, worried, cheerful, irritated, active)
+  select(sad, calm, afraid, unrested, enthusiastic, angry, worried, cheerful, irritated, active)
 
 (parallel <- fa.parallel(prin, fm = "pa"))
 
@@ -77,7 +77,7 @@ dat_cleaned <-
   cbind(as.data.frame(principal$scores)) %>%
   mutate(negaff = TC1,
          posaff = TC2) %>%
-  dplyr::select(-TC1, -TC2)
+  select(-TC1, -TC2)
 ```
 
 
