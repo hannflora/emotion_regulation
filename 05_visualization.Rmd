@@ -1,0 +1,21 @@
+---
+title: "05_visualization"
+author: "Flora"
+date: "2022-10-22"
+output: html_document
+---
+
+# loading packages
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(psych))
+suppressPackageStartupMessages(library(matrixStats))
+suppressPackageStartupMessages(library(performance))
+suppressPackageStartupMessages(library(lmerTest))
+suppressPackageStartupMessages(library(nortest))
+
+
+options(scipen = 999)
+```

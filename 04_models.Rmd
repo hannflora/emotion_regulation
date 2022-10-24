@@ -1,0 +1,167 @@
+---
+title: "05_models"
+output: html_notebook
+---
+
+# About AIC and BIC:
+
+## It seems the "difference of 2" rule of thumb is valid, based on these couple of descriptions I found. So essentially, if a model is 2 AIC units lower than the other, it is considered significantly better.
+https://www.scribbr.com/statistics/akaike-information-criterion/
+https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781118856406.app5
+https://towardsdatascience.com/introduction-to-aic-akaike-information-criterion-9c9ba1c96ced
+https://machinelearningmastery.com/probabilistic-model-selection-measures/
+
+## The difference between them (very simply put): AIC is best for prediction, while BIC is best for explanation. Also, BIC penalizes free parameters more strongly.
+https://stats.stackexchange.com/questions/577/is-there-any-reason-to-prefer-the-aic-or-bic-over-the-other
+
+
+
+# loading packages
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(psych))
+suppressPackageStartupMessages(library(matrixStats))
+suppressPackageStartupMessages(library(performance))
+suppressPackageStartupMessages(library(lmerTest))
+suppressPackageStartupMessages(library(nortest))
+
+options(scipen = 999)
+```
+
+
+# reading dataset
+```{r message=FALSE}
+dat_model <- read_csv("data/data_model.csv")
+```
+
+
+# baseline model
+```{r paged.print=FALSE}
+baseline_model <-
+  
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered +
+      (event_unpleasantness_centered | id), data = dat_model)
+
+summary(baseline_model)
+tab_model(baseline_model, show.std = T)
+AIC(baseline_model)
+BIC(baseline_model)
+# check_model(baseline_model)
+plot_model(baseline_model, type = "diag")
+
+# normality test for residuals
+baseline_model_residuals <- residuals(baseline_model)
+lillie.test(baseline_model_residuals)
+```
+
+
+# baseline model with log10-transformed NA
+```{r paged.print=FALSE}
+baseline_model_NA_log <-
+  
+  lmer(NA_sum_log ~ age + gender + beep + day + 
+      event_unpleasantness_centered +
+      (event_unpleasantness_centered | id), data = dat_model)
+
+summary(baseline_model_NA_log)
+tab_model(baseline_model_NA_log, show.std = T)
+AIC(baseline_model_NA_log)
+BIC(baseline_model_NA_log)
+# check_model(baseline_model_NA_log)
+plot_model(baseline_model_NA_log, type = "diag")
+
+
+# normality test for residuals
+baseline_model_NA_log_residuals <- residuals(baseline_model_NA_log)
+lillie.test(baseline_model_NA_log_residuals)
+```
+
+
+# trait rumination
+```{r}
+trait_model <-
+  
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered * trait_rumination + 
+      (event_unpleasantness_centered | id), data = dat_model)
+
+tab_model(trait_model, show.std = T)
+AIC(trait_model)
+BIC(trait_model)
+# check_model(trait_model)
+```
+
+
+# mean state rumination
+```{r}
+mean_state_model <-
+  
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered * mean_state_rumi_grand_centered + 
+      (event_unpleasantness_centered | id), data = dat_model)
+
+tab_model(mean_state_model, show.std = T)
+AIC(mean_state_model)
+BIC(mean_state_model)
+# check_model(mean_state_model)
+```
+
+
+# state rumination
+```{r}
+state_model <-
+  
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered * rumination_centered + 
+      (event_unpleasantness_centered * rumination_centered | id), data = dat_model)
+
+tab_model(baseline_model, trait_model, mean_state, state_model, show.std = T)
+AIC(state_model)
+BIC(state_model)
+# check_model(state_model)
+```
+
+
+# full model
+```{r}
+full_model <-
+  
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered * rumination_centered + 
+      event_unpleasantness_centered * trait_rumination +
+      event_unpleasantness_centered * mean_state_rumi_grand_centered +
+      (event_unpleasantness_centered * rumination_centered | id), data = dat_model,
+      control = lmerControl(optCtrl=list(ftol_abs=1e-8,xtol_abs=1e-8))
+  )
+
+tab_model(full_model, show.std = T)
+summary(full_model)
+plot_model(full_model, type = "diag")
+plot_model(full_model)
+AIC(full_model)
+BIC(full_model)
+```
+
+
+# full model with log10-transformed NA
+```{r}
+full_model_NA_log <-
+  
+  lmer(NA_sum_log ~ age + gender + beep + day + 
+      event_unpleasantness_centered * rumination_centered + 
+      event_unpleasantness_centered * trait_rumination +
+      event_unpleasantness_centered * mean_state_rumi_grand_centered +
+      (event_unpleasantness_centered * rumination_centered | id), data = dat_model
+      # control = lmerControl(optCtrl=list(ftol_abs=1e-8,xtol_abs=1e-8))
+  )
+
+tab_model(full_model_NA_log, show.std = T)
+summary(full_model_NA_log)
+plot_model(full_model_NA_log, type = "diag")
+AIC(full_model_NA_log)
+BIC(full_model_NA_log)
+```
+

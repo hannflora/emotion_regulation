@@ -19,7 +19,6 @@ suppressPackageStartupMessages(library(semPlot))
 # suppressPackageStartupMessages(library(ltm))
 
 options(scipen = 999)
-
 ```
 
 
@@ -33,10 +32,9 @@ dat_cleaned <- read_csv("data/data_cleaned.csv")
 ```{r warning=FALSE}
 # reordering variables
 dat_cleaned <- dat_cleaned %>% 
-  select(id = id_emo, day, beep, age, gender, edu, date_emotics, date_diary, diary_counter,
+  select(id = id_emo, day, beep, age, gender, edu, date_emotics, ended_pre, date_diary, diary_counter,
          sad:subc_psycho, cheerful = cheerfull, irritated:event_pleasantness, #esm
-         cerq1:cerq36, sb_cerq:ob_cerq, # cross-sectional
-         anxiety_1, anxiety_2, anxiety_3, anxiety_4, anxiety_5, depression_1:depression_3, depression_4, depression_5, depression_6:depression_10, depression_11:extra_neg_event)
+         cerq1:cerq36, sb_cerq:ob_cerq) # cross-sectional
 
 # renaming variables for consistency
 dat_cleaned <- dat_cleaned %>% 
@@ -62,75 +60,35 @@ dat_cleaned <- dat_cleaned %>%
 
 # parallel analysis of affective states
 ```{r}
-prin <-
-  dat_cleaned %>%
-  select(sad, calm, afraid, unrested, enthusiastic, angry, worried, cheerful, irritated, active)
-
-(parallel <- fa.parallel(prin, fm = "pa"))
-
-(principal <-
-    psych::principal(prin, nfactors = 2, rotate = "oblimin"))
-
-# binding component scores to dataset
-dat_cleaned <-
-  dat_cleaned %>%
-  cbind(as.data.frame(principal$scores)) %>%
-  mutate(negaff = TC1,
-         posaff = TC2) %>%
-  select(-TC1, -TC2)
-```
-
-
-# centering metrics within- and between individuals
-```{r}
-# reversing event pleasantness to event unpleasantness
-dat_cleaned <-
-  dat_cleaned %>% 
-  mutate(event_unpleasantness = 8-event_pleasantness) %>% 
-  dplyr::select(-event_pleasantness)
-
-
-# within-person centering of NA and event unpleasantness
-dat_cleaned <-
-  dat_cleaned %>% 
-  group_by(id) %>%
-  mutate_at(vars(negaff, posaff, event_unpleasantness),
-            .funs = list(centered = ~ scale(., scale = F, center = T))) %>% 
-  distinct()
-
-
-# between-level means
-dat_cleaned <-
-  dat_cleaned %>%
-  group_by(id) %>%
-  mutate_at(vars(negaff,
-                 posaff,
-                 event_unpleasantness),
-            .funs = list(mean = ~ mean(., na.rm = T))) %>%
-  ungroup()
-
-# grand-mean centering
-# dat_cleaned <- dat_cleaned %>%
-#   mutate(negaff_mean_grand_centered = scale(negaff_mean, center = T, scale = F))
+# prin <-
+#   dat_cleaned %>%
+#   select(sad, calm, afraid, unrested, enthusiastic, angry, worried, cheerful, irritated, active)
+# 
+# (parallel <- fa.parallel(prin, fm = "pa"))
+# 
+# (principal <-
+#     psych::principal(prin, nfactors = 2, rotate = "oblimin"))
+# 
+# # binding component scores to dataset
+# dat_cleaned <-
+#   dat_cleaned %>%
+#   cbind(as.data.frame(principal$scores)) %>%
+#   mutate(negaff = TC1,
+#          posaff = TC2) %>%
+#   select(-TC1, -TC2)
 ```
 
 
 # CFA for rumination
 ```{r}
-
 dat_cfa_rum <- 
   dat_cleaned %>% 
   dplyr::select(id, cerq_1, cerq_9, cerq_19, cerq_29) %>%
   distinct()
   
-
-cfa_rum <- 'rumination =~ cerq_1 + cerq_9 + cerq_19 + cerq_29'
-
-
+cfa_rum <- 'trait_rumination =~ cerq_1 + cerq_9 + cerq_19 + cerq_29'
 
 fit_rumi <- cfa(model = cfa_rum, data = dat_cfa_rum, std.lv = TRUE, estimator = "ML")
-  
-
 ```
 
 ```{r}
@@ -149,12 +107,11 @@ summary(fit_rumi, fit.measures = TRUE, standardize = TRUE)
 
 ```{r}
 # add rumination between-subject factor scores to the main dataset
-
 scores_cfa_rumination <-
   dat_cfa_rum %>%
   distinct() %>%
-  cbind(lavPredict(fit_rumi, newdata = dat_cfa_rum[1:5])) %>% 
-  select(id, rumination)
+  cbind(lavPredict(fit_rumi, newdata = dat_cfa_rum[1:5])) %>%
+  select(id, trait_rumination)
 
 dat_cleaned <-
   dat_cleaned %>%
@@ -219,7 +176,6 @@ modificationindices(fit) %>%
 
 ```{r}
 # between subject factor score-okat hozzáadni a within subject-ekhez
-
 dat_cfa_lev_2 <-
   cfa_aff %>%
   dplyr::select(id) %>%
@@ -245,32 +201,71 @@ dat_cleaned <-
 # reliability of CERQ rumination scale
 ```{r}
 # dat_cleaned_cerq <- dat_cleaned %>%  
-#   dplyr::select(cerq_3, cerq_12, cerq_21, cerq_30) %>% 
+#   dplyr::select(cerq_1, cerq_9, cerq_19, cerq_29) %>% 
 #   distinct()
 # 
 # cronbach.alpha(dat_cleaned_cerq)
 ```
 
 
-# computing aggregated mean of state rumintaion
+# computing and centering aggregated mean of state rumintaion and event unpleasantness
 ```{r}
+# rumination
 dat_cleaned <- dat_cleaned %>% 
   group_by(id) %>% 
-  mutate(mean_state_rumi = mean(regu_rumination, na.rm = TRUE),
-         rumination_centered = scale(regu_rumination, center = T, scale = F)
+  mutate(mean_state_rumi = mean(regu_rumination, na.rm = TRUE), # between-person means
+         rumination_centered = scale(regu_rumination, center = T, scale = F) # within-person centering
          ) %>% 
   ungroup()
 
 dat_cleaned <- dat_cleaned %>% 
-  mutate(mean_state_rumi_grand_centered = scale(mean_state_rumi, center = T, scale = F))
+  mutate(mean_state_rumi_grand_centered = scale(mean_state_rumi, center = T, scale = F)) # grand-mean centering
+
+
+# event unpleasantness
+  # reversing event pleasantness to event unpleasantness
+  dat_cleaned <-
+    dat_cleaned %>% 
+    mutate(event_unpleasantness = 8-event_pleasantness) %>% 
+    dplyr::select(-event_pleasantness)
+  
+  
+  # within-person centering of event unpleasantness and calculating between-person means
+  dat_cleaned <-
+    dat_cleaned %>% 
+    group_by(id) %>%
+    mutate(event_unpleasantness_centered = scale(event_unpleasantness, center = T, scale = F), # within-person centering
+           event_unpleasantness_mean = mean(event_unpleasantness, na.rm = T) # between-person means
+           ) %>%
+    distinct()
+
+
+# creating .csv file
+dat_cleaned %>% 
+  write.csv("data/data_processed.csv", row.names = F)
 ```
 
 
-# selecting model-relevant variables
+# log10-transforming NA_sum
 ```{r}
+dat_cleaned <- dat_cleaned %>% 
+  mutate(NA_sum_log = log10(NA_sum + 2))
+```
 
+
+# selecting model-relevant variables and converting gender into factor
+```{r}
 dat_model <- dat_cleaned %>%
-  select(id:edu, event_unpleasantness_centered, trait_rumination = rumination, NA_within:rumination_centered, mean_state_rumi_grand_centered)
+  select(id:edu, event_unpleasantness_centered, trait_rumination, NA_within:NA_sum, NA_sum_log, mean_state_rumi, rumination_centered, mean_state_rumi_grand_centered) %>% 
+  mutate(gender = factor(gender, levels = c(1, 2, 3), labels = c("Female", "Male", "Other"))
+  )
+```
+
+
+# distribution of NA_sum
+```{r}
+hist(dat_model$NA_sum)
+hist(dat_model$NA_sum_log)
 ```
 
 
