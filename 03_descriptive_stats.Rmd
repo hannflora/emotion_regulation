@@ -16,6 +16,13 @@ suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(library(readxl))
 suppressPackageStartupMessages(library(ggpubr))
 suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(confintr))
+suppressPackageStartupMessages(library(rcompanion))
+suppressPackageStartupMessages(library(showtext))
+
+loadfonts(device = "all")
+font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
+showtext_auto()
 
 options(scipen = 999)
 ```
@@ -27,6 +34,7 @@ dat_pre <- read_xlsx("data/dat_pre.xlsx")
 dat_processed <- read_csv("data/data_processed.csv")
 dat_unfiltered <- read_csv("data/data_unfiltered.csv")
 ```
+
 
 # filtering datasets
 ```{r}
@@ -49,6 +57,7 @@ dat_processed_distinct <- dat_processed %>%
 dat_not_included <- dat_pre_clean %>% 
   anti_join(dat_processed_distinct, by = c("age", "gender", "edu", "rum_cerq", "ended_pre"))
 ```
+
 
 # sample demographics
 
@@ -329,7 +338,8 @@ dat_processed %>%
   edu_compare_final <- tibble(edu = dat_processed_distinct$edu, group = "final")
   edu_compare <- edu_compare_not_included %>% bind_rows(edu_compare_final)
   
-  chisq.test(edu_compare$group, edu_compare$edu)
+  edu_chisq <- chisq.test(edu_compare$group, edu_compare$edu)
+  cramersv(edu_chisq)
   
 
 # test for median trait rumination
@@ -391,28 +401,58 @@ dat_unfiltered_figure <- dat_unfiltered %>%
   distinct()
   
 ggplot(dat_unfiltered_figure) +
-  geom_histogram(aes(esm_compl_final), bins = 40)
+  geom_histogram(aes(esm_compl_final), bins = 20, fill = "#609CCE", color = "#436d90") +
+  theme_classic() +
+  labs(
+    x = "Compliance rate (%)",
+    y = "Number of participants"
+  ) +
+  theme(axis.title = element_text(size = 12))
 ```
 
 
 # correlation between trait and state rumination measures
 ```{r}
 corr_rumi <- dat_processed %>% 
-  mutate(mean_state_rumi_scaled = scale(mean_state_rumi, center = F),
-         rum_cerq_scaled = scale(rum_cerq, center = F)
-         ) %>% 
-  select(id, mean_state_rumi_scaled, rum_cerq_scaled) %>% 
+  select(id, mean_state_rumi_grand_centered, trait_rumination) %>% 
   distinct() %>% 
   select(-id)
 
-shapiro.test(corr_rumi$rum_cerq)
-shapiro.test(corr_rumi$mean_state_rumi)
+shapiro.test(corr_rumi$trait_rumination)
+shapiro.test(corr_rumi$mean_state_rumi_grand_centered)
 # normality not assumed
 
-cor.test(corr_rumi$rum_cerq, corr_rumi$mean_state_rumi, method = "spearman")
+# corr_coeff <- cor.test(corr_rumi$trait_rumination, corr_rumi$mean_state_rumi, method = "spearman")
 
-ggplot(corr_rumi, aes(rum_cerq_scaled, mean_state_rumi_scaled)) +
+ci_cor(corr_rumi, probs = c(0.025, 0.975), method = "spearman", type = "bootstrap")
+
+corr_rumi_z <- dat_processed %>% 
+  mutate(mean_state_rumi_z = scale(mean_state_rumi),
+         rum_cerq_z = scale(trait_rumination)
+         ) %>% 
+  select(id, mean_state_rumi_z, rum_cerq_z) %>% 
+  distinct() %>% 
+  select(-id)
+
+ggplot(corr_rumi, aes(trait_rumination, mean_state_rumi_grand_centered)) +
   geom_point(alpha = 0.5, position = "jitter") +
-  geom_smooth(method = "lm")
-```
+  geom_smooth(method = "lm", fill = "#8fb9dc", color = "#609CCE") +
+  theme_classic() +
+  labs(x = "Trait rumination",
+       y = "Mean state rumination"
+  ) +
+  theme(axis.title = element_text(size = 12))
 
+# HU
+ggplot(corr_rumi, aes(trait_rumination, mean_state_rumi_grand_centered)) +
+  geom_point(alpha = 0.5, position = "jitter") +
+  geom_smooth(method = "lm", fill = "#F1B564", color = "#F19E64") +
+  theme_classic() +
+  labs(x = "Vonás-rumináció",
+       y = "Átlagos állapot-rumináció"
+  ) +
+  theme(
+    axis.title = element_text(size = 12),
+    text = element_text(family = "Cooper Hewitt")
+    )
+```

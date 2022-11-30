@@ -104,6 +104,12 @@ summary(fit_rumi, fit.measures = TRUE, standardize = TRUE)
 # reliability of rumination factor (omega)
 (reliability(fit_rumi))
 ```
+```{r}
+# factor loadings
+inspect(fit_rumi,what="std")$lambda
+```
+
+
 
 ```{r}
 # add rumination between-subject factor scores to the main dataset
