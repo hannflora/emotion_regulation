@@ -28,6 +28,7 @@ suppressPackageStartupMessages(library(lmerTest))
 suppressPackageStartupMessages(library(nortest))
 suppressPackageStartupMessages(library(extrafont))
 suppressPackageStartupMessages(library(car))
+suppressPackageStartupMessages(library(showtext))
 
 loadfonts(device = "all")
 font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
@@ -56,7 +57,7 @@ tab_model(baseline_model, show.std = T)
 AIC(baseline_model)
 BIC(baseline_model)
 check_collinearity(baseline_model)
-check_model(baseline_model)
+# check_model(baseline_model)
 plot_model(baseline_model, type = "diag")
 plot_model(baseline_model, type = "eff")
 
@@ -93,46 +94,46 @@ lillie.test(dat_model$NA_sum)
 
 # trait rumination
 ```{r}
-# trait_model <-
-#   
-#   lmer(NA_sum ~ age + gender + beep + day + 
-#       event_unpleasantness_centered * trait_rumination + 
-#       (event_unpleasantness_centered | id), data = dat_model)
-# 
-# tab_model(trait_model, show.std = T)
-# AIC(trait_model)
-# BIC(trait_model)
-# # check_model(trait_model)
+trait_model <-
+
+  lmer(NA_sum ~ age + gender + beep + day +
+      event_unpleasantness_centered * trait_rumination +
+(event_unpleasantness_centered | id), data = dat_model)
+
+tab_model(trait_model, show.std = T)
+AIC(trait_model)
+BIC(trait_model)
+# check_model(trait_model)
 ```
 
 
 # mean state rumination
 ```{r}
-# mean_state_model <-
-#   
-#   lmer(NA_sum ~ age + gender + beep + day + 
-#       event_unpleasantness_centered * mean_state_rumi_grand_centered + 
-#       (event_unpleasantness_centered | id), data = dat_model)
-# 
-# tab_model(mean_state_model, show.std = T)
-# AIC(mean_state_model)
-# BIC(mean_state_model)
-# # check_model(mean_state_model)
+mean_state_model <-
+
+  lmer(NA_sum ~ age + gender + beep + day +
+      event_unpleasantness_centered * mean_state_rumi_grand_centered +
+      (event_unpleasantness_centered | id), data = dat_model)
+
+tab_model(mean_state_model, show.std = T)
+AIC(mean_state_model)
+BIC(mean_state_model)
+# check_model(mean_state_model)
 ```
 
 
 # state rumination
 ```{r}
-# state_model <-
-#   
-#   lmer(NA_sum ~ age + gender + beep + day + 
-#       event_unpleasantness_centered * rumination_centered + 
-#       (event_unpleasantness_centered * rumination_centered | id), data = dat_model)
-# 
-# tab_model(baseline_model, trait_model, mean_state, state_model, show.std = T)
-# AIC(state_model)
-# BIC(state_model)
-# # check_model(state_model)
+state_model <-
+
+  lmer(NA_sum ~ age + gender + beep + day +
+      event_unpleasantness_centered * rumination_centered +
+      (event_unpleasantness_centered * rumination_centered | id), data = dat_model)
+
+tab_model(baseline_model, trait_model, mean_state_model, state_model, show.std = T)
+AIC(state_model)
+BIC(state_model)
+# check_model(state_model)
 ```
 
 
@@ -276,5 +277,11 @@ plot_model(full_model,
 # plot_model(full_model_NA_log, type = "diag")
 # AIC(full_model_NA_log)
 # BIC(full_model_NA_log)
+```
+
+
+# saving models
+```{r}
+saveRDS(full_model, "saved_models/full_model.rds")
 ```
 

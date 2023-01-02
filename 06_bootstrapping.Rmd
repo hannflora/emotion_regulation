@@ -1,0 +1,153 @@
+---
+title: "06_bootstrapping"
+author: "Flora"
+date: "2022-12-29"
+output: 
+  html_document: 
+    fig_caption: yes
+editor_options: 
+  chunk_output_type: inline
+---
+
+# loading packages
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(psych))
+suppressPackageStartupMessages(library(matrixStats))
+suppressPackageStartupMessages(library(performance))
+suppressPackageStartupMessages(library(lmerTest))
+suppressPackageStartupMessages(library(nortest))
+suppressPackageStartupMessages(library(extrafont))
+suppressPackageStartupMessages(library(car))
+suppressPackageStartupMessages(library(showtext))
+suppressPackageStartupMessages(library(lmeresampler))
+
+
+loadfonts(device = "all")
+font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
+showtext_auto()
+
+options(scipen = 999)
+```
+
+# reading saved model
+
+```{r}
+# full_model <- readRDS("saved_models/full_model.rds")
+```
+
+# bootstrapping
+
+```{r}
+# cases_boot_full_model <- 
+#   bootstrap(
+#     full_model,
+#     .f = fixef,
+#     type = "case",
+#     B = 5000 ,
+#     resample = c(TRUE, TRUE)
+#   )
+
+# saveRDS(cases_boot_full_model, "bootstrapping/cases_boot_full_model.rds")
+```
+
+# reading bootstrap file and extracting results into a list
+
+```{r}
+cases_boot_full_model <- readRDS("bootstrapping/cases_boot_full_model.rds")
+
+list_boot_full_model <- 
+  list(cases_boot_full_model)
+```
+
+# extracting bootstrapped coefficients
+
+```{r paged.print=TRUE}
+boot_ci_full_model <-
+  list_boot_full_model %>%
+  map(confint, type = "norm")
+boot_ci_full_model
+```
+
+# visualizing bootstrap results
+
+## main effects (prediction of negative affect)
+
+```{r echo=TRUE}
+# extracting results into a tibble
+dat_boot_full_model_maineff <- 
+  list_boot_full_model %>% 
+  map("replicates") %>% 
+  map(
+    ~tibble(
+      trait_rumination = na.omit(.x$trait_rumination),
+      mean_state_rumination = na.omit(.x$mean_state_rumi_grand_centered),
+      state_rumination = na.omit(.x$rumination_centered)
+    )
+  ) %>%
+  bind_rows()
+
+
+# rearranging tibble format
+dat_boot_full_model_maineff_long <- 
+  dat_boot_full_model_maineff %>% 
+  pivot_longer(c(trait_rumination, mean_state_rumination, state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
+
+
+# plotting
+coef_boot_full_model_maineff <- 
+  dat_boot_full_model_maineff_long %>% 
+  ggplot(aes(rumination_intensity, fill = rumination_measure)) +
+     geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
+     geom_density(alpha = .7, color = NA) +
+     labs(
+       x    = "Boostrapped estimate of the prediction of\nnegative affect by different measures of rumination",
+       y = "Density",
+       fill = "",
+       title    = ""
+       ) +
+     scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+coef_boot_full_model_maineff
+```
+
+## interactions (moderation of emotional reactivity)
+
+```{r echo=TRUE}
+# extracting results into a tibble
+dat_boot_full_model_interac <- 
+  list_boot_full_model %>% 
+  map("replicates") %>% 
+  map(
+    ~tibble(
+      trait_rumination = na.omit(.x$"event_unpleasantness_centered:trait_rumination"),
+      mean_state_rumination = na.omit(.x$"event_unpleasantness_centered:mean_state_rumi_grand_centered"),
+      state_rumination = na.omit(.x$"event_unpleasantness_centered:rumination_centered")
+    )
+  ) %>%
+  bind_rows()
+
+
+# rearranging tibble format
+dat_boot_full_model_interac_long <- 
+  dat_boot_full_model_interac %>% 
+  pivot_longer(c(trait_rumination, mean_state_rumination, state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
+
+
+# plotting
+coef_boot_full_model_interac <- 
+  dat_boot_full_model_interac_long %>% 
+  ggplot(aes(rumination_intensity, fill = rumination_measure)) +
+     geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
+     geom_density(alpha = .7, color = NA) +
+     labs(
+       x    = "Boostrapped estimate of the moderation of\nemotional reactivity by different measures of rumination",
+       y = "Density",
+       fill = "",
+       title    = ""
+       ) +
+     scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+coef_boot_full_model_interac
+```
