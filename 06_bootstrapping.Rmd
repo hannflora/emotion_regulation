@@ -24,6 +24,7 @@ suppressPackageStartupMessages(library(extrafont))
 suppressPackageStartupMessages(library(car))
 suppressPackageStartupMessages(library(showtext))
 suppressPackageStartupMessages(library(lmeresampler))
+suppressPackageStartupMessages(library(boot))
 
 
 loadfonts(device = "all")
@@ -34,13 +35,13 @@ options(scipen = 999)
 ```
 
 # reading saved model
-
 ```{r}
 # full_model <- readRDS("saved_models/full_model.rds")
 ```
 
 # bootstrapping
 
+## cases bootstrap
 ```{r}
 # cases_boot_full_model <- 
 #   bootstrap(
@@ -54,32 +55,67 @@ options(scipen = 999)
 # saveRDS(cases_boot_full_model, "bootstrapping/cases_boot_full_model.rds")
 ```
 
-# reading bootstrap file and extracting results into a list
 
+### reading bootstrap file and extracting results into a list
 ```{r}
 cases_boot_full_model <- readRDS("bootstrapping/cases_boot_full_model.rds")
 
-list_boot_full_model <- 
+list_cases_boot_full_model <- 
   list(cases_boot_full_model)
 ```
 
-# extracting bootstrapped coefficients
 
+### extracting bootstrapped coefficients
 ```{r paged.print=TRUE}
-boot_ci_full_model <-
-  list_boot_full_model %>%
+cases_boot_ci_full_model  <-
+  list_cases_boot_full_model %>%
   map(confint, type = "norm")
-boot_ci_full_model
+cases_boot_ci_full_model
 ```
+
+
+## residual bootstrap
+```{r}
+# residual_boot_full_model <-
+#   bootstrap(
+#     full_model,
+#     .f = fixef,
+#     type = "residual",
+#     B = 5000 ,
+#     resample = c(TRUE, TRUE)
+#   )
+# 
+# saveRDS(residual_boot_full_model, "bootstrapping/residual_boot_full_model.rds")
+```
+
+
+### reading bootstrap file and extracting results into a list
+```{r}
+residual_boot_full_model <- readRDS("bootstrapping/residual_boot_full_model.rds")
+
+list_residual_boot_full_model <- 
+  list(residual_boot_full_model)
+```
+
+
+### extracting bootstrapped coefficients
+```{r paged.print=TRUE}
+residual_boot_ci_full_model  <-
+  list_residual_boot_full_model %>%
+  map(confint, type = "basic")
+residual_boot_ci_full_model
+```
+
 
 # visualizing bootstrap results
 
-## main effects (prediction of negative affect)
+## cases bootstrap
 
+### main effects (prediction of negative affect)
 ```{r echo=TRUE}
 # extracting results into a tibble
-dat_boot_full_model_maineff <- 
-  list_boot_full_model %>% 
+dat_cases_boot_full_model_maineff <- 
+  list_cases_boot_full_model %>% 
   map("replicates") %>% 
   map(
     ~tibble(
@@ -92,14 +128,14 @@ dat_boot_full_model_maineff <-
 
 
 # rearranging tibble format
-dat_boot_full_model_maineff_long <- 
-  dat_boot_full_model_maineff %>% 
+dat_cases_boot_full_model_maineff_long <- 
+  dat_cases_boot_full_model_maineff %>% 
   pivot_longer(c(trait_rumination, mean_state_rumination, state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
 
 
 # plotting
-coef_boot_full_model_maineff <- 
-  dat_boot_full_model_maineff_long %>% 
+coef_cases_boot_full_model_maineff <- 
+  dat_cases_boot_full_model_maineff_long %>% 
   ggplot(aes(rumination_intensity, fill = rumination_measure)) +
      geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
      geom_density(alpha = .7, color = NA) +
@@ -110,15 +146,14 @@ coef_boot_full_model_maineff <-
        title    = ""
        ) +
      scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
-coef_boot_full_model_maineff
+coef_cases_boot_full_model_maineff
 ```
 
-## interactions (moderation of emotional reactivity)
-
+### interactions (moderation of emotional reactivity)
 ```{r echo=TRUE}
 # extracting results into a tibble
-dat_boot_full_model_interac <- 
-  list_boot_full_model %>% 
+dat_cases_boot_full_model_interac <- 
+  list_cases_boot_full_model %>% 
   map("replicates") %>% 
   map(
     ~tibble(
@@ -131,14 +166,14 @@ dat_boot_full_model_interac <-
 
 
 # rearranging tibble format
-dat_boot_full_model_interac_long <- 
-  dat_boot_full_model_interac %>% 
+dat_cases_boot_full_model_interac_long <- 
+  dat_cases_boot_full_model_interac %>% 
   pivot_longer(c(trait_rumination, mean_state_rumination, state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
 
 
 # plotting
-coef_boot_full_model_interac <- 
-  dat_boot_full_model_interac_long %>% 
+coef_cases_boot_full_model_interac <- 
+  dat_cases_boot_full_model_interac_long %>% 
   ggplot(aes(rumination_intensity, fill = rumination_measure)) +
      geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
      geom_density(alpha = .7, color = NA) +
@@ -149,5 +184,85 @@ coef_boot_full_model_interac <-
        title    = ""
        ) +
      scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
-coef_boot_full_model_interac
+coef_cases_boot_full_model_interac
+```
+
+
+## residual bootstrap
+
+### main effects (prediction of negative affect)
+```{r echo=TRUE}
+# extracting results into a tibble
+dat_residual_boot_full_model_maineff <- 
+  list_residual_boot_full_model %>% 
+  map("replicates") %>% 
+  map(
+    ~tibble(
+      trait_rumination = na.omit(.x$trait_rumination),
+      mean_state_rumination = na.omit(.x$mean_state_rumi_grand_centered),
+      state_rumination = na.omit(.x$rumination_centered)
+    )
+  ) %>%
+  bind_rows()
+
+
+# rearranging tibble format
+dat_residual_boot_full_model_maineff_long <- 
+  dat_residual_boot_full_model_maineff %>% 
+  pivot_longer(c(trait_rumination, mean_state_rumination, state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
+
+
+# plotting
+coef_residual_boot_full_model_maineff <- 
+  dat_residual_boot_full_model_maineff_long %>% 
+  ggplot(aes(rumination_intensity, fill = rumination_measure)) +
+     geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
+     geom_density(alpha = .7, color = NA) +
+     labs(
+       x    = "Boostrapped estimate of the prediction of\nnegative affect by different measures of rumination",
+       y = "Density",
+       fill = "",
+       title    = ""
+       ) +
+     scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+coef_residual_boot_full_model_maineff
+```
+
+
+### interactions (moderation of emotional reactivity)
+```{r echo=TRUE}
+# extracting results into a tibble
+dat_residual_boot_full_model_interac <- 
+  list_residual_boot_full_model %>% 
+  map("replicates") %>% 
+  map(
+    ~tibble(
+      trait_rumination = na.omit(.x$"event_unpleasantness_centered:trait_rumination"),
+      mean_state_rumination = na.omit(.x$"event_unpleasantness_centered:mean_state_rumi_grand_centered"),
+      state_rumination = na.omit(.x$"event_unpleasantness_centered:rumination_centered")
+    )
+  ) %>%
+  bind_rows()
+
+
+# rearranging tibble format
+dat_residual_boot_full_model_interac_long <- 
+  dat_residual_boot_full_model_interac %>% 
+  pivot_longer(c(trait_rumination, mean_state_rumination, state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
+
+
+# plotting
+coef_residual_boot_full_model_interac <- 
+  dat_residual_boot_full_model_interac_long %>% 
+  ggplot(aes(rumination_intensity, fill = rumination_measure)) +
+     geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
+     geom_density(alpha = .7, color = NA) +
+     labs(
+       x    = "Boostrapped estimate of the moderation of\nemotional reactivity by different measures of rumination",
+       y = "Density",
+       fill = "",
+       title    = ""
+       ) +
+     scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+coef_residual_boot_full_model_interac
 ```

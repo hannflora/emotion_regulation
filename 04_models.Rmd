@@ -183,7 +183,8 @@ plot_model(full_model,
            theme_minimal() +
            theme(axis.text = element_text(size = 10, color = "black"),
                  axis.title.x = element_text(size = 12, color = "black"),
-                 axis.line = element_line(size = .3)
+                 axis.line = element_line(size = .3),
+                 text = element_text(family = "Cooper Hewitt")
            )
 
 # plot for main effects (colored afterwards in photoshop)
@@ -205,7 +206,8 @@ plot_model(full_model,
            theme_minimal() +
            theme(axis.text = element_text(size = 10, color = "black"),
                  axis.title.x = element_text(size = 12, color = "black"),
-                 axis.line = element_line(size = .3)
+                 axis.line = element_line(size = .3),
+                 text = element_text(family = "Cooper Hewitt")
            )
 ```
 
