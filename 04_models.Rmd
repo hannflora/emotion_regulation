@@ -1,10 +1,12 @@
 ---
 title: "05_models"
-output: 
-  html_notebook: 
+output:
+  html_document:
+    df_print: paged
+  html_notebook:
     fig_width: 12
     fig_height: 4
-editor_options: 
+editor_options:
   chunk_output_type: inline
 ---
 

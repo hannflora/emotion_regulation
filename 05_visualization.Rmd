@@ -19,6 +19,8 @@ suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(rcartocolor))
 suppressPackageStartupMessages(library(patchwork))
 suppressPackageStartupMessages(library(jpeg))
+suppressPackageStartupMessages(library(showtext))
+suppressPackageStartupMessages(library(extrafont))
 
 
 loadfonts(device = "all")
@@ -43,92 +45,92 @@ dat_model <- read_csv("data/data_model.csv")
 
 # grouping by z-scores (FFR: can be done using the 'scale' function)
 ```{r}
-# dat_model_visu <- dat_model %>% 
-#   mutate(
-#     z_trait_rumi = scale(trait_rumination),
-#     z_mean_state_rumi = scale(mean_state_rumi_grand_centered),
-#     z_state_rumi = scale(rumination_centered),
-#     z_NA_sum = scale(NA_sum),
-#     
-#     z_trait_rumi_group = ifelse(z_trait_rumi > 1,
-#                                 "+1 SD",
-#                                 ifelse(z_trait_rumi < 1 & z_trait_rumi > -1,
-#                                        "mean",
-#                                        "-1 SD"
-#                                        )
-#                                 ),
-#     z_mean_state_rumi_group = ifelse(z_mean_state_rumi > 1,
-#                                 "+1 SD",
-#                                 ifelse(z_mean_state_rumi < 1 & z_mean_state_rumi > -1,
-#                                        "mean",
-#                                        "-1 SD"
-#                                        )
-#                                 ),
-#     z_state_rumi_group = ifelse(z_state_rumi > 1,
-#                                 "+1 SD",
-#                                 ifelse(z_state_rumi < 1 & z_state_rumi > -1,
-#                                        "mean",
-#                                        "-1 SD"
-#                                        )
-#                                 ),
-#   )
+dat_model_visu <- dat_model %>%
+  mutate(
+    z_trait_rumi = scale(trait_rumination),
+    z_mean_state_rumi = scale(mean_state_rumi_grand_centered),
+    z_state_rumi = scale(rumination_centered),
+    z_NA_sum = scale(NA_sum),
+
+    z_trait_rumi_group = ifelse(z_trait_rumi > 1,
+                                "+1 SD",
+                                ifelse(z_trait_rumi < 1 & z_trait_rumi > -1,
+                                       "mean",
+                                       "-1 SD"
+                                       )
+                                ),
+    z_mean_state_rumi_group = ifelse(z_mean_state_rumi > 1,
+                                "+1 SD",
+                                ifelse(z_mean_state_rumi < 1 & z_mean_state_rumi > -1,
+                                       "mean",
+                                       "-1 SD"
+                                       )
+                                ),
+    z_state_rumi_group = ifelse(z_state_rumi > 1,
+                                "+1 SD",
+                                ifelse(z_state_rumi < 1 & z_state_rumi > -1,
+                                       "mean",
+                                       "-1 SD"
+                                       )
+                                ),
+  )
 ```
 
 
 # visualization of trait rumination
 ```{r}
-# dat_model_visu %>% 
-#   ggplot(aes(x = event_unpleasantness_centered, y = NA_sum)) +
-#   geom_jitter(color = "black", alpha = 0.05, size = 2) +
-#   geom_smooth(data = dat_model_visu %>% filter(z_trait_rumi_group %in% c("+1 SD", "-1 SD")),
-#               mapping = aes(color = z_trait_rumi_group),
-#               method = "lm",
-#               size = 2.5) +
-#   scale_color_manual(values = c(colors[["low"]][["Trait rumination"]],
-#                                 colors[["high"]][["Trait rumination"]])) +
-#    labs(x     = "Perceived stress (within-person)",
-#         y     = "Negative affect",
-#         color = "Trait rumination",
-#         title = "Trait rumination") +
-#    guides(color = guide_legend(override.aes = list(alpha = c(alpha_low, 1 - alpha_low))))
+dat_model_visu %>%
+  ggplot(aes(x = event_unpleasantness_centered, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(data = dat_model_visu %>% filter(z_trait_rumi_group %in% c("+1 SD", "-1 SD")),
+              mapping = aes(color = z_trait_rumi_group),
+              method = "lm",
+              size = 2.5) +
+  scale_color_manual(values = c(colors[["low"]][["Trait rumination"]],
+                                colors[["high"]][["Trait rumination"]])) +
+   labs(x     = "Perceived stress (within-person)",
+        y     = "Negative affect",
+        color = "Trait rumination",
+        title = "Trait rumination") +
+   guides(color = guide_legend(override.aes = list(alpha = c(alpha_low, 1 - alpha_low))))
 ```
 
 
 # visualization of mean state rumination
 ```{r}
-# dat_model_visu %>% 
-#   ggplot(aes(x = event_unpleasantness_centered, y = NA_sum)) +
-#   geom_jitter(color = "black", alpha = 0.05, size = 2) +
-#   geom_smooth(data = dat_model_visu,
-#               mapping = aes(linetype = z_mean_state_rumi_group),
-#               method = "lm",
-#               color = colors[["tasks"]][["Mean state rumination"]],
-#               size = 1.5) +
-#   scale_linetype_manual(values = c(1, 2)) +
-#    labs(x     = "Perceived stress (within-person)",
-#         y     = "Negative affect",
-#         color = "Mean state rumination",
-#         title = "Mean state rumination") +
-#    guides(linetype = guide_legend(keywidth = 5, keyheight = 2)) +
-#   theme_classic()
+dat_model_visu %>%
+  ggplot(aes(x = event_unpleasantness_centered, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(data = dat_model_visu,
+              mapping = aes(linetype = z_mean_state_rumi_group),
+              method = "lm",
+              color = colors[["tasks"]][["Mean state rumination"]],
+              size = 1.5) +
+  scale_linetype_manual(values = c(1, 2)) +
+   labs(x     = "Perceived stress (within-person)",
+        y     = "Negative affect",
+        color = "Mean state rumination",
+        title = "Mean state rumination") +
+   guides(linetype = guide_legend(keywidth = 5, keyheight = 2)) +
+  theme_classic()
 ```
 
 # visualization of state rumination
 ```{r}
-# dat_model_visu %>% 
-#   ggplot(aes(x = event_unpleasantness_centered, y = NA_sum)) +
-#   geom_jitter(color = "black", alpha = 0.05, size = 2) +
-#   geom_smooth(data = dat_model_visu %>% filter(z_state_rumi_group %in% c("+1 SD", "-1 SD")),
-#               mapping = aes(color = z_state_rumi_group),
-#               method = "lm",
-#               size = 2.5) +
-#   scale_color_manual(values = c(colors[["low"]][["State rumination"]],
-#                                 colors[["high"]][["State rumination"]])) +
-#    labs(x     = "Perceived stress (within-person)",
-#         y     = "Negative affect",
-#         color = "State rumination",
-#         title    = "State rumination") +
-#    guides(color = guide_legend(override.aes = list(alpha = c(alpha_low, 1 - alpha_low))))
+dat_model_visu %>%
+  ggplot(aes(x = event_unpleasantness_centered, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(data = dat_model_visu %>% filter(z_state_rumi_group %in% c("+1 SD", "-1 SD")),
+              mapping = aes(color = z_state_rumi_group),
+              method = "lm",
+              size = 2.5) +
+  scale_color_manual(values = c(colors[["low"]][["State rumination"]],
+                                colors[["high"]][["State rumination"]])) +
+   labs(x     = "Perceived stress (within-person)",
+        y     = "Negative affect",
+        color = "State rumination",
+        title    = "State rumination") +
+   guides(color = guide_legend(override.aes = list(alpha = c(alpha_low, 1 - alpha_low))))
 ```
 
 
