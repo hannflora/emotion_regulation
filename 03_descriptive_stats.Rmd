@@ -3,6 +3,8 @@ title: "04_descriptive_stats"
 author: "Flora"
 date: "2022-08-25"
 output: html_document
+editor_options: 
+  chunk_output_type: inline
 ---
 
 # loading packages
@@ -412,7 +414,7 @@ ggplot(dat_unfiltered_figure) +
 
 
 # correlation between trait and state rumination measures
-```{r}
+```{r fig.height=1.5, fig.width=4}
 corr_rumi <- dat_processed %>% 
   select(id, mean_state_rumi_grand_centered, trait_rumination) %>% 
   distinct() %>% 
@@ -434,14 +436,20 @@ corr_rumi_z <- dat_processed %>%
   distinct() %>% 
   select(-id)
 
-ggplot(corr_rumi, aes(trait_rumination, mean_state_rumi_grand_centered)) +
-  geom_point(alpha = 0.5, position = "jitter") +
-  geom_smooth(method = "lm", fill = "#8fb9dc", color = "#609CCE") +
-  theme_classic() +
-  labs(x = "Trait rumination",
-       y = "Mean state rumination"
-  ) +
-  theme(axis.title = element_text(size = 12))
+corrplot <- 
+  ggplot(corr_rumi, aes(trait_rumination, mean_state_rumi_grand_centered)) +
+    geom_point(alpha = 0.5, position = "jitter", size = 2.5) +
+    geom_smooth(method = "lm", fill = "#F1B564", color = "#F19E64") +
+    theme_minimal() +
+    labs(x = "Trait rumination",
+         y = "Mean state rumination"
+    ) +
+    theme(axis.title = element_text(size = 12),
+          axis.text = element_text(size = 18, color = "black"),
+          panel.grid.minor.y = element_blank(),
+          axis.line = element_line()
+    )
+corrplot
 
 # HU
 ggplot(corr_rumi, aes(trait_rumination, mean_state_rumi_grand_centered)) +

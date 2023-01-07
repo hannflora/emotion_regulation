@@ -1,6 +1,11 @@
 ---
 title: "05_models"
-output: html_notebook
+output: 
+  html_notebook: 
+    fig_width: 12
+    fig_height: 4
+editor_options: 
+  chunk_output_type: inline
 ---
 
 # About AIC and BIC:
@@ -165,50 +170,56 @@ plot_model(full_model, type = "diag")
 # coefplots for full model
 ```{r}
 # plot for interactions (colored afterwards in photoshop)
-plot_model(full_model,
-           type = "std",
-           rm.terms = c("rumination_centered", "trait_rumination", "mean_state_rumi_grand_centered", "age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"),
-           ci.lvl = 0.95,
-           std.est = T,
-           title = "",
-           show.values = TRUE,
-           colors = "black",
-           value.size = 4,
-           dot.size = 3,
-           line.size = 1.2,
-           axis.labels = c("Trait rumination * Perceived stress", "Mean state rumination * Perceived stress", "State rumination * Perceived stress"),
-           axis.title = "Standardized β coefficients"
-           ) +
-           ylim(0, 0.1) +
-           theme_minimal() +
-           theme(axis.text = element_text(size = 10, color = "black"),
-                 axis.title.x = element_text(size = 12, color = "black"),
-                 axis.line = element_line(size = .3),
-                 text = element_text(family = "Cooper Hewitt")
-           )
+coefplot_interactions <- 
+  plot_model(full_model,
+             type = "std",
+             rm.terms = c("rumination_centered", "trait_rumination", "mean_state_rumi_grand_centered", "age", "gender [Male]", "gender [Other]",   "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             value.size = 6,
+             value.offset = .25,
+             dot.size = 4,
+             line.size = 1.2,
+             axis.labels = c("Trait rumination * Perceived stress", "Mean state rumination * Perceived stress", "State rumination * Perceived   stress"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.1) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black"),
+                   axis.line = element_line(size = .3),
+                   text = element_text(family = "Cooper Hewitt")
+             )
+coefplot_interactions
 
 # plot for main effects (colored afterwards in photoshop)
-plot_model(full_model,
-           type = "std",
-           terms = c("rumination_centered", "mean_state_rumi_grand_centered", "trait_rumination"),
-           ci.lvl = 0.95,
-           std.est = TRUE,
-           title = "",
-           show.values = TRUE,
-           colors = "black",
-           value.size = 4,
-           dot.size = 3,
-           line.size = 1.2,
-           axis.labels = c("Trait rumination", "Mean state rumination", "State rumination"),
-           axis.title = "Standardized β coefficients"
-           ) +
-           ylim(0, 1) +
-           theme_minimal() +
-           theme(axis.text = element_text(size = 10, color = "black"),
-                 axis.title.x = element_text(size = 12, color = "black"),
-                 axis.line = element_line(size = .3),
-                 text = element_text(family = "Cooper Hewitt")
-           )
+coefplot_maineffects <- 
+  plot_model(full_model,
+             type = "std",
+             terms = c("rumination_centered", "mean_state_rumi_grand_centered", "trait_rumination"),
+             ci.lvl = 0.95,
+             std.est = TRUE,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             value.size = 6,
+             value.offset = 0.25,
+             dot.size = 4,
+             line.size = 1.2,
+             axis.labels = c("Trait rumination", "Mean state rumination", "State rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 1) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black"),
+                   axis.line = element_line(size = .3),
+                   text = element_text(family = "Cooper Hewitt")
+             )
+coefplot_maineffects
 ```
 
 
