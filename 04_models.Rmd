@@ -159,13 +159,15 @@ full_model <-
 
 tab_model(full_model, show.std = T)
 summary(full_model)
-# plot_model(full_model, type = "eff")
+plot_model(full_model, type = "eff")
+# check_model(full_model)
+check_collinearity(full_model)
 plot_model(full_model, rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"), ci.lvl=0.95)
 AIC(full_model)
 BIC(full_model)
 
 # checking assumptions
-plot_model(full_model, type = "diag")
+plot_model(full_model)
 ```
 
 

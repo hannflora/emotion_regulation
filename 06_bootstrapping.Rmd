@@ -26,23 +26,22 @@ suppressPackageStartupMessages(library(showtext))
 suppressPackageStartupMessages(library(lmeresampler))
 suppressPackageStartupMessages(library(boot))
 
-
-loadfonts(device = "all")
-font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
-showtext_auto()
+# loadfonts(device = "all")
+# font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
+# showtext_auto()
 
 options(scipen = 999)
 ```
 
 # reading saved model
-```{r include=FALSE}
+```{r}
 # full_model <- readRDS("saved_models/full_model.rds")
 ```
 
 
 # bootstrapping
 ## cases bootstrap
-```{r include=FALSE}
+```{r}
 # cases_boot_full_model <- 
 #   bootstrap(
 #     full_model,
@@ -57,7 +56,7 @@ options(scipen = 999)
 
 
 ### reading bootstrap file and extracting results into a list
-```{r include=FALSE}
+```{r}
 cases_boot_full_model <- readRDS("bootstrapping/cases_boot_full_model.rds")
 
 list_cases_boot_full_model <- 
@@ -66,7 +65,7 @@ list_cases_boot_full_model <-
 
 
 ### extracting bootstrapped coefficients
-```{r include=FALSE, paged.print=TRUE}
+```{r paged.print=TRUE}
 cases_boot_ci_full_model  <-
   list_cases_boot_full_model %>%
   map(confint, type = "norm")
@@ -115,16 +114,16 @@ residual_boot_ci_full_model_perc
 
 ## parametric bootstrap
 ```{r}
-parametric_boot_full_model <-
-  bootstrap(
-    full_model,
-    .f = fixef,
-    type = "parametric",
-    B = 5000 ,
-    resample = c(TRUE, TRUE)
-  )
-
-saveRDS(parametric_boot_full_model, "bootstrapping/parametric_boot_full_model.rds")
+# parametric_boot_full_model <-
+#   bootstrap(
+#     full_model,
+#     .f = fixef,
+#     type = "parametric",
+#     B = 5000 ,
+#     resample = c(TRUE, TRUE)
+#   )
+# 
+# saveRDS(parametric_boot_full_model, "bootstrapping/parametric_boot_full_model.rds")
 ```
 
 
@@ -155,7 +154,7 @@ parametric_boot_ci_full_model_perc
 # visualizing bootstrap results
 ## cases bootstrap
 ### main effects (prediction of negative affect)
-```{r echo=TRUE, include=FALSE}
+```{r echo=TRUE}
 # extracting results into a tibble
 dat_cases_boot_full_model_maineff <- 
   list_cases_boot_full_model %>% 
@@ -193,7 +192,7 @@ coef_cases_boot_full_model_maineff
 ```
 
 ### interactions (moderation of emotional reactivity)
-```{r echo=TRUE, include=FALSE}
+```{r echo=TRUE}
 # extracting results into a tibble
 dat_cases_boot_full_model_interac <- 
   list_cases_boot_full_model %>% 
