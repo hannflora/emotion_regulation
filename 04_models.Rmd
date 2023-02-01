@@ -114,6 +114,34 @@ BIC(trait_model)
 ```
 
 
+## coefplot for trait rumination
+```{r}
+coefplot_trait <- 
+  plot_model(trait_model,
+             type = "std",
+             rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             value.size = 4,
+             dot.size = 3,
+             line.size = 1.2,
+             axis.labels = c("Trait rumination * Perceived stress", "Trait rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.6) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black"),
+                   axis.line = element_line(size = .3),
+                   # text = element_text(family = "Cooper Hewitt")
+             )
+coefplot_trait
+```
+
+
 # mean state rumination
 ```{r}
 mean_state_model <-
@@ -129,18 +157,75 @@ BIC(mean_state_model)
 ```
 
 
+## coefplot for mean state rumination
+```{r}
+coefplot_mean_state <- 
+  plot_model(mean_state_model,
+             type = "std",
+             rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             value.size = 4,
+             dot.size = 3,
+             line.size = 1.2,
+             axis.labels = c("Mean state rumination * Perceived stress", "Mean state rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.6) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black"),
+                   axis.line = element_line(size = .3),
+                   # text = element_text(family = "Cooper Hewitt")
+             )
+coefplot_mean_state
+```
+
+
 # state rumination
 ```{r}
 state_model <-
 
   lmer(NA_sum ~ age + gender + beep + day +
       event_unpleasantness_centered * rumination_centered +
-      (event_unpleasantness_centered * rumination_centered | id), data = dat_model)
+      (event_unpleasantness_centered | id), data = dat_model)
 
-tab_model(baseline_model, trait_model, mean_state_model, state_model, show.std = T)
+tab_model(state_model, show.std = T)
+tab_model(trait_model, mean_state_model, state_model, show.std = T)
 AIC(state_model)
 BIC(state_model)
 # check_model(state_model)
+```
+
+
+## coefplot for state rumination
+```{r}
+coefplot_state <- 
+  plot_model(state_model,
+             type = "std",
+             rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             value.size = 4,
+             dot.size = 3,
+             line.size = 1.2,
+             axis.labels = c("State rumination * Perceived stress", "State rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.6) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black"),
+                   axis.line = element_line(size = .3),
+                   # text = element_text(family = "Cooper Hewitt")
+             )
+coefplot_state
 ```
 
 
