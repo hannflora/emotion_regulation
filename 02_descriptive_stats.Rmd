@@ -9,28 +9,16 @@ editor_options:
 
 # loading packages
 ```{r}
-options(scipen = 999)
-
 suppressPackageStartupMessages(library(tidyverse))
-suppressPackageStartupMessages(library(sjPlot))
-suppressPackageStartupMessages(library(lme4))
-suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(library(readxl))
-suppressPackageStartupMessages(library(ggpubr))
 suppressPackageStartupMessages(library(lubridate))
 suppressPackageStartupMessages(library(confintr))
-suppressPackageStartupMessages(library(rcompanion))
-suppressPackageStartupMessages(library(showtext))
-
-loadfonts(device = "all")
-font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
-showtext_auto()
 
 options(scipen = 999)
 ```
 
 
-# importing and joining datasets of self-reports and behavioural assessments
+# importing datasets
 ```{r message=FALSE}
 dat_pre <- read_xlsx("data/dat_pre.xlsx")
 dat_processed <- read_csv("data/data_processed.csv")
@@ -40,7 +28,7 @@ dat_unfiltered <- read_csv("data/data_unfiltered.csv")
 
 # filtering datasets
 ```{r}
-# cleaning pre
+# cleaning 'pre' (cross-sectional) dataset
 dat_pre_clean <- dat_pre %>% 
   mutate(ended_pre = as_datetime(ended)) %>% 
   select(session, ended_pre, age, gender, edu, cerq1, cerq9, cerq19, cerq29) %>% 
@@ -75,6 +63,7 @@ dat_pre_clean %>%
             Range_min = min(age),
             Range_max = max(age))
 
+
 # gender
 dat_pre_clean %>% 
   select(gender) %>% 
@@ -107,6 +96,7 @@ dat_pre_clean %>%
   # 6 = Doctorate (PhD)
   # 7 = Other
 
+
 # trait rumination
 dat_pre_clean %>%
   summarise(N         = n(),
@@ -129,6 +119,7 @@ dat_not_included %>%
             SD        = round(sd(age), digits = 2),
             Range_min = min(age),
             Range_max = max(age))
+
 
 # gender
 dat_not_included %>% 
@@ -161,6 +152,7 @@ dat_not_included %>%
   # 5 = Bachelor's or Master's degree
   # 6 = Doctorate (PhD)
   # 7 = Other
+
 
 # trait rumination
 dat_not_included %>%
@@ -201,7 +193,7 @@ dat_processed %>%
   table() %>% 
   prop.table() %>% `*`(100) %>% round(2)
 
-# 1 = Female
+  # 1 = Female
   # 2 = Male
   # 3 = Other
 
@@ -241,7 +233,7 @@ dat_processed %>%
 ```
 
 
-# descriptives
+# descriptive statistics
 
 ## descriptives of ESM surveys in final sample
 ```{r}
@@ -252,7 +244,7 @@ dat_processed %>%
             n_obs = length(sad))
 
 
-#...and per capita
+# number of surveys completed per capita
 dat_processed %>%
   distinct() %>% 
   group_by(id) %>% 
@@ -266,7 +258,7 @@ dat_processed %>%
 
 
 # descriptives of rumination 
-  # state rumination
+  ## state rumination
   dat_processed %>% 
     select(id, day, beep, regu_rumination) %>%
     summarise(
@@ -277,7 +269,7 @@ dat_processed %>%
       sd_state_rumi     = sd(regu_rumination)
   )
   
-  # mean state rumination
+  ## mean state rumination
   dat_processed %>% 
     select(id, day, beep, mean_state_rumi) %>%
     summarise(
@@ -318,53 +310,57 @@ dat_processed %>%
 ## statistical tests to compare initial and final samples
 ```{r}
 # test for median age
-  # normality test
+  ## normality test
   shapiro.test(dat_not_included$age)
   shapiro.test(dat_processed_distinct$age)
     # -> normality not assumed -> mann-whitney
   
-  # mann-whitney test
-  wilcox.test(dat_not_included$age, dat_processed_distinct$age)
-  
+  ## mann-whitney test
+  age_wilcox <- wilcox.test(dat_not_included$age, dat_processed_distinct$age)
+  age_wilcox
 
+  
 # test for gender distribution
   gender_compare_not_included <- tibble(gender = dat_not_included$gender, group = "not_included")
   gender_compare_final <- tibble(gender = dat_processed_distinct$gender, group = "final")
   gender_compare <- gender_compare_not_included %>% bind_rows(gender_compare_final)
   
-  chisq.test(gender_compare$group, gender_compare$gender)
+  gender_chisq <-  chisq.test(gender_compare$group, gender_compare$gender)
+  gender_chisq
 
-
+  
 # test for education
   edu_compare_not_included <- tibble(edu = dat_not_included$edu, group = "not_included")
   edu_compare_final <- tibble(edu = dat_processed_distinct$edu, group = "final")
   edu_compare <- edu_compare_not_included %>% bind_rows(edu_compare_final)
   
   edu_chisq <- chisq.test(edu_compare$group, edu_compare$edu)
+  edu_chisq
   cramersv(edu_chisq)
   
 
 # test for median trait rumination
-  # normality test
+  ## normality test
   shapiro.test(dat_not_included$rum_cerq)
   shapiro.test(dat_processed_distinct$rum_cerq)
     # -> normality not assumed -> mann-whitney
   
-  # mann-whitney test
-  wilcox.test(dat_not_included$rum_cerq, dat_processed_distinct$rum_cerq)
+  ## mann-whitney test
+  median_trait_rumi_wilcox <-  wilcox.test(dat_not_included$rum_cerq, dat_processed_distinct$rum_cerq)
+  median_trait_rumi_wilcox
 ```
 
 
-# calculating compliance in final sample
+# calculating compliance rate in final sample
 
 ## compliance on ESM surveys
 ```{r}
-# filter dataset
+# filtering dataset
 dat_unfiltered <- dat_unfiltered %>% 
   filter(!is.na(day) & day != 0)
 
 
-# identify day of quitting
+# identifying day of quitting
 dat_maxday_esm <- dat_unfiltered %>% 
   select(id_emo, date_emotics, day) %>% 
   filter(!is.na(date_emotics)) %>% 
@@ -375,7 +371,7 @@ dat_unfiltered <- dat_unfiltered %>%
   left_join(dat_maxday_esm, by = "id_emo")
 
 
-# calculating compliance
+# calculating compliance rate
 dat_unfiltered %>%
   select(id_emo, date_emotics, day, beep, max_day_esm) %>%
   group_by(id_emo) %>%
@@ -391,7 +387,8 @@ dat_unfiltered %>%
             max_final_compl    = max(esm_compl_final, na.rm = T)
   )
 
-# distribution of the number of completed surveys
+
+# visualizing compliance rate
 dat_unfiltered_figure <- dat_unfiltered %>% 
   select(id_emo, date_emotics, day, beep, max_day_esm) %>%
   group_by(id_emo) %>%
@@ -401,8 +398,8 @@ dat_unfiltered_figure <- dat_unfiltered %>%
   ) %>% 
   ungroup() %>% 
   distinct()
-  
-ggplot(dat_unfiltered_figure) +
+
+visu_compliance <- ggplot(dat_unfiltered_figure) +
   geom_histogram(aes(esm_compl_final), bins = 20, fill = "#609CCE", color = "#436d90") +
   theme_classic() +
   labs(
@@ -410,21 +407,22 @@ ggplot(dat_unfiltered_figure) +
     y = "Number of participants"
   ) +
   theme(axis.title = element_text(size = 12))
+
+visu_compliance
 ```
 
 
 # correlation between trait and state rumination measures
-```{r fig.height=1.5, fig.width=4}
+```{r}
 corr_rumi <- dat_processed %>% 
   select(id, mean_state_rumi_grand_centered, trait_rumination) %>% 
   distinct() %>% 
   select(-id)
 
+# normality test
 shapiro.test(corr_rumi$trait_rumination)
 shapiro.test(corr_rumi$mean_state_rumi_grand_centered)
-# normality not assumed
-
-# corr_coeff <- cor.test(corr_rumi$trait_rumination, corr_rumi$mean_state_rumi, method = "spearman")
+  # -> normality not assumed
 
 ci_cor(corr_rumi, probs = c(0.025, 0.975), method = "spearman", type = "bootstrap")
 
@@ -436,31 +434,17 @@ corr_rumi_z <- dat_processed %>%
   distinct() %>% 
   select(-id)
 
-corrplot <- 
+corrplot_trait_state_rumi <- 
   ggplot(corr_rumi, aes(trait_rumination, mean_state_rumi_grand_centered)) +
-    geom_point(alpha = 0.5, position = "jitter", size = 2.5) +
+    geom_point(alpha = 0.5, position = "jitter") +
     geom_smooth(method = "lm", fill = "#F1B564", color = "#F19E64") +
     theme_classic() +
     labs(x = "Trait rumination",
          y = "Mean state rumination"
-    ) +
-    theme(axis.title = element_text(size = 12),
-          axis.text = element_text(size = 18, color = "black")
-          # panel.grid.minor.y = element_blank(),
-          # axis.line = element_line()
+    ) + theme(axis.title = element_text(size = 12),
     )
-corrplot
 
-# HU
-ggplot(corr_rumi, aes(trait_rumination, mean_state_rumi_grand_centered)) +
-  geom_point(alpha = 0.5, position = "jitter") +
-  geom_smooth(method = "lm", fill = "#F1B564", color = "#F19E64") +
-  theme_classic() +
-  labs(x = "Vonás-rumináció",
-       y = "Átlagos állapot-rumináció"
-  ) +
-  theme(
-    axis.title = element_text(size = 12),
-    text = element_text(family = "Cooper Hewitt")
-    )
+corrplot_trait_state_rumi
 ```
+
+

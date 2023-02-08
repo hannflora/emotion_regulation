@@ -1,0 +1,340 @@
+---
+title: "05_models"
+output:
+  html_document:
+    df_print: paged
+  html_notebook:
+    fig_width: 12
+    fig_height: 4
+editor_options:
+  chunk_output_type: inline
+---
+
+# loading packages
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(performance))
+suppressPackageStartupMessages(library(nortest))
+
+options(scipen = 999)
+```
+
+
+# importing dataset
+```{r message=FALSE}
+dat_model <- read_csv("data/data_model.csv")
+```
+
+
+# baseline model
+```{r}
+# buliding model
+baseline_model <-
+  lmer(NA_sum ~ age + gender + beep + day + 
+      event_unpleasantness_centered +
+      (event_unpleasantness_centered | id),
+      data = dat_model
+  )
+
+
+# model outputs
+summary(baseline_model)
+tab_model(baseline_model, show.std = T)
+
+
+# assumption checks
+check_collinearity(baseline_model)
+plot_model(baseline_model, type = "diag")
+#check_model(baseline_model)
+
+
+# visualizing predicted values
+plot_model(baseline_model)
+
+
+# goodness of fit indicators
+AIC_baseline <- AIC(baseline_model)
+BIC_baseline <- BIC(baseline_model)
+
+
+# normality test for residuals
+baseline_model_residuals <- residuals(baseline_model)
+lillie.test(baseline_model_residuals)
+
+
+# normality test for NA_sum
+lillie.test(dat_model$NA_sum)
+```
+
+
+# trait rumination
+```{r}
+# building model
+trait_model <-
+  lmer(
+    NA_sum ~ age + gender + beep + day +
+    event_unpleasantness_centered * trait_rumination +
+    (event_unpleasantness_centered | id),
+      data = dat_model
+    )
+
+
+# model outputs
+summary(trait_model)
+tab_model(trait_model, show.std = T)
+
+
+# assumption checks
+check_collinearity(trait_model)
+plot_model(trait_model, type = "diag")
+#check_model(trait_model)
+
+
+# visualizing predicted values
+plot_model(trait_model)
+
+
+# goodness of fit indicators
+AIC_trait <- AIC(trait_model)
+BIC_trait <- BIC(trait_model)
+```
+
+
+## coefplot for trait rumination
+```{r}
+coefplot_trait <- 
+  plot_model(trait_model,
+             type = "std",
+             rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             axis.labels = c("Trait rumination * Perceived stress", "Trait rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.6) +
+             theme_minimal() +
+             theme(axis.line = element_line(size = .3),
+                   axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black")
+                   )
+
+coefplot_trait
+```
+
+
+# mean state rumination
+```{r}
+# building model
+mean_state_model <-
+  lmer(
+    NA_sum ~ age + gender + beep + day +
+    event_unpleasantness_centered * mean_state_rumi_grand_centered +
+    (event_unpleasantness_centered | id),
+    data = dat_model
+    )
+
+# model outputs
+summary(mean_state_model)
+tab_model(mean_state_model, show.std = T)
+
+
+# assumption checks
+check_collinearity(mean_state_model)
+plot_model(mean_state_model, type = "diag")
+#check_model(mean_state_model)
+
+
+# visualizing predicted values
+plot_model(mean_state_model)
+
+
+# goodness of fit indicators
+AIC_mean_state <- AIC(mean_state_model)
+BIC_mean_state <- BIC(mean_state_model)
+```
+
+
+## coefplot for mean state rumination
+```{r}
+coefplot_mean_state <- 
+  plot_model(mean_state_model,
+             type = "std",
+             rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             axis.labels = c("Mean state rumination * Perceived stress", "Mean state rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.6) +
+             theme_minimal() +
+             theme(axis.line = element_line(size = .3),
+                   axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black")
+                   )
+
+coefplot_mean_state
+```
+
+
+# state rumination
+```{r}
+# building model
+state_model <-
+  lmer(
+    NA_sum ~ age + gender + beep + day +
+    event_unpleasantness_centered * rumination_centered +
+    (event_unpleasantness_centered | id), data = dat_model
+    )
+
+
+# model outputs
+summary(state_model)
+tab_model(state_model, show.std = T)
+
+
+# assumption checks
+check_collinearity(state_model)
+plot_model(state_model, type = "diag")
+#check_model(state_model)
+
+
+# visualizing predicted values
+plot_model(state_model)
+
+
+# goodness of fit indicators
+AIC_state <- AIC(state_model)
+BIC_state <- BIC(state_model)
+
+
+
+# outputs for trait, mean state and state models
+tab_model(trait_model, mean_state_model, state_model, show.std = T)
+```
+
+
+## coefplot for state rumination
+```{r}
+coefplot_state <- 
+  plot_model(state_model,
+             type = "std",
+             rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             axis.labels = c("State rumination * Perceived stress", "State rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.6) +
+             theme_minimal() +
+             theme(axis.line = element_line(size = .3),
+                   axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black")
+                   )
+
+coefplot_state
+```
+
+
+# full model
+```{r}
+# building model
+full_model <-
+  
+  lmer(
+    NA_sum ~ age + gender + beep + day +
+    event_unpleasantness_centered * rumination_centered +  
+    event_unpleasantness_centered * mean_state_rumi_grand_centered +
+    event_unpleasantness_centered * trait_rumination +
+      
+    (event_unpleasantness_centered * rumination_centered | id), data = dat_model,
+    control = lmerControl(optCtrl=list(ftol_abs=1e-8,xtol_abs=1e-8))
+    )
+
+
+# model outputs
+summary(full_model)
+tab_model(full_model, show.std = T)
+
+
+# assumption checks
+check_collinearity(full_model)
+plot_model(state_model, type = "diag")
+#check_model(full_model)
+
+
+# visualizing predicted values
+plot_model(full_model)
+
+
+# goodness of fit indicators
+AIC_full <- AIC(full_model)
+BIC_full <- BIC(full_model)
+```
+
+
+
+# coefplots for full model
+```{r}
+# plot for interactions (colored afterwards in photoshop)
+coefplot_interactions <- 
+  plot_model(full_model,
+             type = "std",
+             rm.terms = c("rumination_centered", "trait_rumination", "mean_state_rumi_grand_centered", "age", "gender [Male]", "gender [Other]",   "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             axis.labels = c("Trait rumination * Perceived stress", "Mean state rumination * Perceived stress", "State rumination * Perceived stress"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.1) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black"),
+                   axis.line = element_line(size = .3)
+                   )
+
+coefplot_interactions
+
+
+# plot for main effects (colored afterwards in photoshop)
+coefplot_maineffects <- 
+  plot_model(full_model,
+             type = "std",
+             terms = c("rumination_centered", "mean_state_rumi_grand_centered", "trait_rumination"),
+             ci.lvl = 0.95,
+             std.est = TRUE,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             axis.labels = c("Trait rumination", "Mean state rumination", "State rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 1) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black"),
+                   axis.line = element_line(size = .3)
+                   )
+
+coefplot_maineffects
+```
+
+
+# saving full model for bootstrapping
+```{r}
+saveRDS(full_model, "saved_models/full_model.rds")
+```
+

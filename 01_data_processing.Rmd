@@ -7,28 +7,25 @@ editor_options:
 
 # loading packages
 ```{r}
-
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(sjPlot))
-suppressPackageStartupMessages(library(lme4))
 suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(library(lavaan))
 suppressPackageStartupMessages(library(semTools))
-suppressPackageStartupMessages(library(semPlot))
-# suppressPackageStartupMessages(library(ltm))
 
 options(scipen = 999)
 ```
 
 
-# reading dataset
+# importing dataset
 ```{r message=FALSE, warning=FALSE}
 dat_cleaned <- read_csv("data/data_cleaned.csv")
 ```
 
 
-# reordering and renaming variables
+# tidying data
+
+## reordering and renaming variables
 ```{r warning=FALSE}
 # reordering variables
 dat_cleaned <- dat_cleaned %>% 
@@ -36,13 +33,14 @@ dat_cleaned <- dat_cleaned %>%
          sad:subc_psycho, cheerful = cheerfull, irritated:event_pleasantness, #esm
          cerq1:cerq36, sb_cerq:ob_cerq) # cross-sectional
 
+
 # renaming variables for consistency
 dat_cleaned <- dat_cleaned %>% 
   rename_at(vars(starts_with("cerq")), funs(str_replace(., "cerq", "cerq_")))
 ```
 
 
-# filling missing values in cross-sectional variables
+## filling missing values in cross-sectional variables
 ```{r}
 dat_cleaned <- dat_cleaned %>%
   group_by(id) %>% 
@@ -51,35 +49,16 @@ dat_cleaned <- dat_cleaned %>%
 ```
 
 
-# filtering obeservations with missing ESM
+## filtering obeservations with missing ESM data
 ```{r}
 dat_cleaned <- dat_cleaned %>% 
   filter(!is.na(date_emotics) & !is.na(day))
 ```
 
 
-# parallel analysis of affective states
-```{r}
-# prin <-
-#   dat_cleaned %>%
-#   select(sad, calm, afraid, unrested, enthusiastic, angry, worried, cheerful, irritated, active)
-# 
-# (parallel <- fa.parallel(prin, fm = "pa"))
-# 
-# (principal <-
-#     psych::principal(prin, nfactors = 2, rotate = "oblimin"))
-# 
-# # binding component scores to dataset
-# dat_cleaned <-
-#   dat_cleaned %>%
-#   cbind(as.data.frame(principal$scores)) %>%
-#   mutate(negaff = TC1,
-#          posaff = TC2) %>%
-#   select(-TC1, -TC2)
-```
+# CFA and reliability
 
-
-# CFA for rumination
+## CFA for rumination
 ```{r}
 dat_cfa_rum <- 
   dat_cleaned %>% 
@@ -92,8 +71,8 @@ fit_rumi <- cfa(model = cfa_rum, data = dat_cfa_rum, std.lv = TRUE, estimator = 
 ```
 
 ```{r}
-fitMeasures(fit_rumi, c("chisq", "df", "pvalue", "cfi", "tli",
-                   "rmsea", "srmr"))
+fitMeasures(fit_rumi, c("chisq", "df", "pvalue", "cfi",
+                        "tli", "rmsea", "srmr"))
 ```
 
 ```{r}
@@ -101,18 +80,16 @@ summary(fit_rumi, fit.measures = TRUE, standardize = TRUE)
 ```
 
 ```{r}
-# reliability of rumination factor (omega)
+# reliability of rumination factor (using omega)
 (reliability(fit_rumi))
 ```
 ```{r}
 # factor loadings
-inspect(fit_rumi,what="std")$lambda
+inspect(fit_rumi, what="std")$lambda
 ```
 
-
-
 ```{r}
-# add rumination between-subject factor scores to the main dataset
+# adding rumination between-subject factor scores to main dataset
 scores_cfa_rumination <-
   dat_cfa_rum %>%
   distinct() %>%
@@ -121,7 +98,7 @@ scores_cfa_rumination <-
 
 dat_cleaned <-
   dat_cleaned %>%
-  left_join(scores_cfa_rumination, by = c("id"))
+  left_join(scores_cfa_rumination, by = "id")
 ```
 
 
@@ -136,32 +113,29 @@ cfa_aff <-
   ungroup()
 
 cfa_aff_syntax <- '
-
   level: 1
-
       NA_within =~ sad + afraid + unrested + angry
       afraid ~~ angry
 
   level: 2
-
       NA_between =~ sad + afraid + unrested + angry
 '
-# "irritated" has been omitted from the analysis since it worsened the fit of the model
+# "irritated" was omitted from the analysis as it worsened model fit
 
-fit <- cfa(model = cfa_aff_syntax, data = cfa_aff, cluster = "id", std.lv = TRUE, estimator = "ML")
+fit_aff <- cfa(model = cfa_aff_syntax, data = cfa_aff, cluster = "id", std.lv = TRUE, estimator = "ML")
 ```
 
 ```{r}
-fitMeasures(fit, c("chisq", "df", "pvalue", "cfi", "tli",
-                   "rmsea", "srmr_within", "srmr_between"))
+fitMeasures(fit_aff, c("chisq", "df", "pvalue", "cfi", "tli",
+                       "rmsea", "srmr_within", "srmr_between"))
 ```
 
 ```{r}
-summary(fit, fit.measures = TRUE, standardize = TRUE)
+summary(fit_aff, fit.measures = TRUE, standardize = TRUE)
 ```
 
 ```{r}
-modificationindices(fit) %>%
+modificationindices(fit_aff) %>%
   dplyr::select("lhs", "op", "rhs", "level", "mi") %>%
   arrange(desc(mi)) %>%
   # filter(level == 1) %>% 
@@ -171,26 +145,26 @@ modificationindices(fit) %>%
 
 ```{r}
 # within-person factor loadings
-(inspect(fit, what = "std")$within$lambda)
+(inspect(fit_aff, what = "std")$within$lambda)
 
 # between-person factor loadings
-(inspect(fit, what = "std")$id$lambda)
+(inspect(fit_aff, what = "std")$id$lambda)
 
-# reliability of NA model
-(reliability(fit))
+# reliability (using omega)
+(reliability(fit_aff))
 ```
 
 ```{r}
-# between subject factor score-okat hozzáadni a within subject-ekhez
+# adding between subject factor scores to within subject factor scores
 dat_cfa_lev_2 <-
   cfa_aff %>%
   dplyr::select(id) %>%
   distinct() %>%
-  cbind(lavPredict(fit, newdata = cfa_aff[4:8], level = 2L))
+  cbind(lavPredict(fit_aff, newdata = cfa_aff[4:8], level = 2L))
 
 dat_cfa_lev_1 <-
   cfa_aff %>%
-  cbind(lavPredict(fit, newdata = cfa_aff[4:8], level = 1L)) %>%
+  cbind(lavPredict(fit_aff, newdata = cfa_aff[4:8], level = 1L)) %>%
   dplyr::select(-c(sad:angry))
 
 dat_cfa <-
@@ -201,16 +175,6 @@ dat_cfa <-
 dat_cleaned <-
   dat_cleaned %>%
   left_join(dat_cfa, by = c("id", "date_emotics", "beep"))
-```
-
-
-# reliability of CERQ rumination scale
-```{r}
-# dat_cleaned_cerq <- dat_cleaned %>%  
-#   dplyr::select(cerq_1, cerq_9, cerq_19, cerq_29) %>% 
-#   distinct()
-# 
-# cronbach.alpha(dat_cleaned_cerq)
 ```
 
 
@@ -229,14 +193,14 @@ dat_cleaned <- dat_cleaned %>%
 
 
 # event unpleasantness
-  # reversing event pleasantness to event unpleasantness
+  ## reversing event pleasantness to event unpleasantness
   dat_cleaned <-
     dat_cleaned %>% 
     mutate(event_unpleasantness = 8-event_pleasantness) %>% 
     dplyr::select(-event_pleasantness)
   
   
-  # within-person centering of event unpleasantness and calculating between-person means
+  ## within-person centering of event unpleasantness and calculating between-person means
   dat_cleaned <-
     dat_cleaned %>% 
     group_by(id) %>%
@@ -244,9 +208,11 @@ dat_cleaned <- dat_cleaned %>%
            event_unpleasantness_mean = mean(event_unpleasantness, na.rm = T) # between-person means
            ) %>%
     distinct()
+```
 
 
-# creating .csv file
+# creating .csv file for running descriptive statistics
+```{r}
 dat_cleaned %>% 
   write.csv("data/data_processed.csv", row.names = F)
 ```
@@ -272,10 +238,11 @@ dat_model <- dat_cleaned %>%
 ```{r}
 hist(dat_model$NA_sum)
 hist(dat_model$NA_sum_log)
+
 ```
 
 
-# writing dat_model into .csv file
+# writing dat_model into .csv file for running models
 ```{r}
 dat_model %>%
   write.csv("data/data_model.csv", row.names = F)
