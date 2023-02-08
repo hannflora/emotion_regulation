@@ -1,7 +1,6 @@
 ---
-title: "04_descriptive_stats"
+title: "02_descriptive_stats"
 author: "Flora"
-date: "2022-08-25"
 output: html_document
 editor_options: 
   chunk_output_type: inline

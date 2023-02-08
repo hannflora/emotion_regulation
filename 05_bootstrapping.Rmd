@@ -1,7 +1,6 @@
 ---
-title: "06_bootstrapping"
+title: "05_bootstrapping"
 author: "Flora"
-date: "2022-12-29"
 output: 
   html_document: 
     fig_caption: yes
