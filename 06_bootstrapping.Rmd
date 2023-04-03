@@ -26,9 +26,9 @@ suppressPackageStartupMessages(library(showtext))
 suppressPackageStartupMessages(library(lmeresampler))
 suppressPackageStartupMessages(library(boot))
 
-# loadfonts(device = "all")
-# font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
-# showtext_auto()
+loadfonts(device = "all")
+font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
+showtext_auto()
 
 options(scipen = 999)
 ```
@@ -393,3 +393,94 @@ coef_parametric_boot_full_model_interac <-
 coef_parametric_boot_full_model_interac
 ```
 
+
+### main effects (prediction of negative affect) [HU]
+```{r echo=TRUE}
+# extracting results into a tibble
+dat_parametric_boot_full_model_maineff <- 
+  list_parametric_boot_full_model %>% 
+  map("replicates") %>% 
+  map(
+    ~tibble(
+      trait_rumination = na.omit(.x$trait_rumination),
+      mean_state_rumination = na.omit(.x$mean_state_rumi_grand_centered),
+      state_rumination = na.omit(.x$rumination_centered)
+    )
+  ) %>%
+  bind_rows()
+
+
+# rearranging tibble format
+dat_parametric_boot_full_model_maineff_long <- 
+  dat_parametric_boot_full_model_maineff %>% 
+  pivot_longer(c(trait_rumination, mean_state_rumination, state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
+
+
+# plotting
+coef_parametric_boot_full_model_maineff_HU <- 
+  dat_parametric_boot_full_model_maineff_long %>% 
+  ggplot(aes(rumination_intensity, fill = rumination_measure)) +
+     geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
+     geom_density(alpha = .7, color = NA) +
+     labs(
+       x    = "Rumináció-mutatók negatív érzelmi\nállapotokat bejósló erejének bootsrappelt becslése",
+       y = "Sűrűség",
+       fill = "",
+       title    = ""
+       ) +
+     scale_fill_manual(values = c("#FFBF69", "#B0CDB6", "#7581A7"), labels = c("Átlagos állapot-rumináció", "Állapot-rumináció", "Vonás-rumináció")) +
+     theme_classic() +
+     theme(axis.title = element_text(size = 14),
+           axis.text = element_text(size = 10),
+           text = element_text(family = "Cooper Hewitt")
+           )
+coef_parametric_boot_full_model_maineff_HU
+
+# jpeg(filename = "boot_maineaff_HU.jpeg", quality = 100)
+# coef_parametric_boot_full_model_maineff_HU
+# dev.off()
+```
+
+
+### interactions (moderation of emotional reactivity) [HU]
+```{r echo=TRUE}
+# extracting results into a tibble
+dat_parametric_boot_full_model_interac <- 
+  list_parametric_boot_full_model %>% 
+  map("replicates") %>% 
+  map(
+    ~tibble(
+      trait_rumination = na.omit(.x$"event_unpleasantness_centered:trait_rumination"),
+      mean_state_rumination = na.omit(.x$"event_unpleasantness_centered:mean_state_rumi_grand_centered"),
+      state_rumination = na.omit(.x$"event_unpleasantness_centered:rumination_centered")
+    )
+  ) %>%
+  bind_rows()
+
+
+# rearranging tibble format
+dat_parametric_boot_full_model_interac_long <- 
+  dat_parametric_boot_full_model_interac %>% 
+  pivot_longer(c(trait_rumination, mean_state_rumination, state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
+
+
+# plotting
+coef_parametric_boot_full_model_interac_HU <- 
+  dat_parametric_boot_full_model_interac_long %>% 
+  ggplot(aes(rumination_intensity, fill = rumination_measure)) +
+     geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
+     geom_density(alpha = .7, color = NA) +
+     labs(
+       x     = "Rumináció-mutatók érzelmi reaktivitást\nmoderáló erejének bootstrappelt becslése",
+       y     = "",
+       fill  = "",
+       title = ""
+       ) +
+     scale_fill_manual(values = c("#FFBF69", "#B0CDB6", "#7581A7"), labels = c("Átlagos állapot-rumináció", "Állapot-rumináció", "Vonás-rumináció")) +
+     theme_classic() +
+     theme(axis.title = element_text(size = 14),
+           axis.text = element_text(size = 10),
+           text = element_text(family = "Cooper Hewitt")
+           )
+coef_parametric_boot_full_model_interac_HU
+```

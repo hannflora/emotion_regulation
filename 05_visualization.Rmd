@@ -185,10 +185,10 @@ multipanel_figure <- state_rumi_plot + mean_state_rumi_plot + trait_rumi_plot
 ```
 
 
-# visualization of all three measures (HU)
+# visualization of all three measures [HU]
 ```{r fig.height=4, fig.width=11}
 # state rumination
-state_rumi_plot <- dat_model_visu %>% 
+state_rumi_plot_HU <- dat_model_visu %>% 
   ggplot(aes(x = rumination_centered, y = NA_sum)) +
   geom_jitter(color = "black", alpha = 0.05, size = 2) +
   geom_smooth(method = "lm",
@@ -204,7 +204,7 @@ state_rumi_plot <- dat_model_visu %>%
         )
 
 # mean state rumination
-mean_state_rumi_plot <- dat_model_visu %>% 
+mean_state_rumi_plot_HU <- dat_model_visu %>% 
   ggplot(aes(x = mean_state_rumi_grand_centered, y = NA_sum)) +
   geom_jitter(color = "black", alpha = 0.05, size = 2) +
   geom_smooth(method = "lm",
@@ -221,7 +221,7 @@ mean_state_rumi_plot <- dat_model_visu %>%
 
 
 # trait rumination
-trait_rumi_plot <- dat_model_visu %>% 
+trait_rumi_plot_HU <- dat_model_visu %>% 
   ggplot(aes(x = trait_rumination, y = NA_sum)) +
   geom_jitter(color = "black", alpha = 0.05, size = 2) +
   geom_smooth(method = "lm",

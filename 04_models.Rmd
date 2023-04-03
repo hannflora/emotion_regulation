@@ -312,7 +312,7 @@ coefplot_maineffects
 ```
 
 
-# coefplots for full model (HU)
+# coefplots for full model [HU]
 ```{r}
 # plot for interactions (colored afterwards in photoshop)
 plot_model(full_model,
