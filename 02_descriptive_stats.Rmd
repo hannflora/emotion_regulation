@@ -350,9 +350,7 @@ dat_processed %>%
 ```
 
 
-# calculating compliance rate in final sample
-
-## compliance on ESM surveys
+# calculating ESM survey compliance rate in final sample
 ```{r}
 # filtering dataset
 dat_unfiltered <- dat_unfiltered %>% 

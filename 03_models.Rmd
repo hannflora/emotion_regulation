@@ -48,7 +48,7 @@ tab_model(baseline_model, show.std = T)
 # assumption checks
 check_collinearity(baseline_model)
 plot_model(baseline_model, type = "diag")
-#check_model(baseline_model)
+# check_model(baseline_model)
 
 
 # visualizing predicted values
@@ -248,7 +248,7 @@ coefplot_state
 
 
 # full model
-```{r}
+```{r fig.height=5, fig.width=3}
 # building model
 full_model <-
   
@@ -271,12 +271,13 @@ tab_model(full_model, show.std = T)
 # assumption checks
 check_collinearity(full_model)
 plot_model(state_model, type = "diag")
-#check_model(full_model)
+# check_model(full_model)
 
 
 # visualizing predicted values
+# png()
 plot_model(full_model)
-
+# dev.off()
 
 # goodness of fit indicators
 AIC_full <- AIC(full_model)
