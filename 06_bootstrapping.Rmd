@@ -257,18 +257,22 @@ dat_residual_boot_full_model_maineff_long <-
 # plotting
 coef_residual_boot_full_model_maineff <- 
   dat_residual_boot_full_model_maineff_long %>% 
-  ggplot(aes(rumination_intensity, fill = rumination_measure)) +
+  ggplot(aes(rumination_intensity, fill = rumination_measure, linetype = rumination_measure)) +
      geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
-     geom_density(alpha = .7, color = NA) +
+     geom_density(alpha = .7, outline.type = "both") +
      labs(
-       x    = "Boostrapped estimates for the prediction of\nnegative affect by different measures of rumination",
+       x = "Boostrapped raw estimates for the prediction of\nnegative affect by different measures of rumination",
        y = "Density",
+       title = "",
        fill = "",
-       title    = ""
+       linetype = ""
        ) +
      theme_classic() +
      theme(legend.position = c(0.8, 0.8)) +
-     scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+     scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination")) +
+     scale_color_manual("black") +
+     scale_linetype_manual(values = c("solid", "dashed", "dotted"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+     
 coef_residual_boot_full_model_maineff
 ```
 
@@ -298,18 +302,22 @@ dat_residual_boot_full_model_interac_long <-
 # plotting
 coef_residual_boot_full_model_interac <- 
   dat_residual_boot_full_model_interac_long %>% 
-  ggplot(aes(rumination_intensity, fill = rumination_measure)) +
+  ggplot(aes(rumination_intensity, fill = rumination_measure, linetype = rumination_measure)) +
      geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
-     geom_density(alpha = .7, color = NA) +
+     geom_density(alpha = .7, outline.type = "both") +
      labs(
-       x    = "Boostrapped estimates for the moderation of\nemotional reactivity by different measures of rumination",
+       x = "Boostrapped raw estimates for the moderation of\nemotional reactivity by different measures of rumination",
        y = "Density",
+       title = "",
        fill = "",
-       title    = ""
+       linetype = ""
        ) +
        theme_classic()+
        theme(legend.position = c(0.8, 0.8)) +
-       scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+       scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination")) +
+       scale_color_manual("black") +
+       scale_linetype_manual(values = c("solid", "dashed", "dotted"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+
 coef_residual_boot_full_model_interac
 ```
 
@@ -317,7 +325,7 @@ coef_residual_boot_full_model_interac
 
 ## parametric bootstrap
 ### main effects (prediction of negative affect)
-```{r echo=TRUE}
+```{r echo=TRUE, fig.height=3, fig.width=10}
 # extracting results into a tibble
 dat_parametric_boot_full_model_maineff <- 
   list_parametric_boot_full_model %>% 
@@ -343,20 +351,25 @@ coef_parametric_boot_full_model_maineff <-
   dat_parametric_boot_full_model_maineff_long %>% 
   ggplot(aes(rumination_intensity, fill = rumination_measure)) +
      geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
-     geom_density(alpha = .7, color = NA) +
+     geom_density(alpha = .65, color = NA) +
      labs(
-       x    = "Boostrapped estimate of the prediction of\nnegative affect by different measures of rumination",
+       x    = "Boostrapped raw estimates of the prediction of\nnegative affect by different measures of rumination",
        y = "Density",
        fill = "",
        title    = ""
        ) +
-     scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+     theme_classic() +
+     theme(axis.title = element_text(size = 14),
+           axis.text = element_text(size = 12),
+           text = element_text(family = "Cooper Hewitt")
+           ) +
+     scale_fill_manual(values = c("#AA0434", "#2174B2", "#A9CEB5"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
 coef_parametric_boot_full_model_maineff
 ```
 
 
 ### interactions (moderation of emotional reactivity)
-```{r echo=TRUE}
+```{r echo=TRUE, fig.height=3, fig.width=10}
 # extracting results into a tibble
 dat_parametric_boot_full_model_interac <- 
   list_parametric_boot_full_model %>% 
@@ -382,14 +395,19 @@ coef_parametric_boot_full_model_interac <-
   dat_parametric_boot_full_model_interac_long %>% 
   ggplot(aes(rumination_intensity, fill = rumination_measure)) +
      geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
-     geom_density(alpha = .7, color = NA) +
+     geom_density(alpha = .65, color = NA) +
      labs(
-       x    = "Boostrapped estimate of the moderation of\nemotional reactivity by different measures of rumination",
+       x    = "Boostrapped raw estimates of the moderation of\nemotional reactivity by different measures of rumination",
        y = "Density",
        fill = "",
        title    = ""
        ) +
-     scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+     theme_classic() +
+     theme(axis.title = element_text(size = 14),
+           axis.text = element_text(size = 12),
+           text = element_text(family = "Cooper Hewitt")
+           ) +
+     scale_fill_manual(values = c("#AA0434", "#2174B2", "#A9CEB5"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
 coef_parametric_boot_full_model_interac
 ```
 
@@ -432,6 +450,7 @@ coef_parametric_boot_full_model_maineff_HU <-
      theme_classic() +
      theme(axis.title = element_text(size = 14),
            axis.text = element_text(size = 10),
+           legend.text = element_text(size = 12),
            text = element_text(family = "Cooper Hewitt")
            )
 coef_parametric_boot_full_model_maineff_HU
@@ -472,7 +491,7 @@ coef_parametric_boot_full_model_interac_HU <-
      geom_density(alpha = .7, color = NA) +
      labs(
        x     = "Rumináció-mutatók érzelmi reaktivitást\nmoderáló erejének bootstrappelt becslése",
-       y     = "",
+       y     = "Sűrűség",
        fill  = "",
        title = ""
        ) +
@@ -480,6 +499,7 @@ coef_parametric_boot_full_model_interac_HU <-
      theme_classic() +
      theme(axis.title = element_text(size = 14),
            axis.text = element_text(size = 10),
+           legend.text = element_text(size = 12),
            text = element_text(family = "Cooper Hewitt")
            )
 coef_parametric_boot_full_model_interac_HU

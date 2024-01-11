@@ -1,0 +1,176 @@
+---
+title: "JPSP_review_anlyses"
+author: "Flora"
+date: "2024-01-10"
+output: html_document
+---
+
+# loading packages
+```{r}
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(psych))
+suppressPackageStartupMessages(library(matrixStats))
+suppressPackageStartupMessages(library(performance))
+suppressPackageStartupMessages(library(lmerTest))
+suppressPackageStartupMessages(library(nortest))
+suppressPackageStartupMessages(library(extrafont))
+suppressPackageStartupMessages(library(car))
+suppressPackageStartupMessages(library(showtext))
+suppressPackageStartupMessages(library(confintr))
+suppressPackageStartupMessages(library(tidyverse))
+
+loadfonts(device = "all")
+font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
+showtext_auto()
+
+options(scipen = 999)
+```
+
+
+# reading dataset
+```{r message=FALSE}
+dat_model <- read_csv("data/data_model.csv")
+dat_processed <- read_csv("data/data_processed.csv")
+```
+
+
+# reappraisal - posaff model
+```{r}
+reapp_posaff_model <- lmer(PA_sum ~ age + gender + beep + day +
+                           reapp_centered +
+                          (reapp_centered | id), data = dat_model)
+                           # + trait_reappraisal
+
+# summary(reapp_posaff_model)
+tab_model(reapp_posaff_model, show.std = T, digits = 3, digits.re = 3)
+AIC(reapp_posaff_model)
+BIC(reapp_posaff_model)
+check_collinearity(reapp_posaff_model)
+# check_model(reapp_posaff_model)
+plot_model(reapp_posaff_model, type = "diag")
+plot_model(reapp_posaff_model, type = "eff")
+
+# normality test for residuals
+reapp_posaff_model_residuals <- residuals(reapp_posaff_model)
+lillie.test(reapp_posaff_model_residuals)
+
+# normality test for PA_sum
+lillie.test(dat_model$PA_sum)
+```
+
+
+# reflection - posaff model
+```{r}
+reflect_posaff_model <- lmer(PA_sum ~ age + gender + beep + day +
+                             reflect_centered +
+                            (reflect_centered | id), data = dat_model)
+                            # + trait_acceptance
+
+# summary(reflect_posaff_model)
+tab_model(reflect_posaff_model, show.std = T, digits = 3, digits.re = 3)
+AIC(reflect_posaff_model)
+BIC(reflect_posaff_model)
+check_collinearity(reflect_posaff_model)
+# check_model(reflect_posaff_model)
+plot_model(reflect_posaff_model, type = "diag")
+plot_model(reflect_posaff_model, type = "eff")
+
+# normality test for residuals
+reflect_posaff_model_residuals <- residuals(reflect_posaff_model)
+lillie.test(reflect_posaff_model_residuals)
+
+# normality test for PA_sum
+lillie.test(dat_model$PA_sum)
+```
+
+
+# correlation between trait and state reappraisal measures
+
+## correlation
+```{r}
+corr_reapp <- dat_processed %>% 
+  select(id, mean_state_reapp_grand_centered, trait_reappraisal) %>% 
+  distinct() %>% 
+  select(-id)
+
+shapiro.test(corr_reapp$trait_reappraisal)
+shapiro.test(corr_reapp$mean_state_reapp_grand_centered)
+# normality not assumed
+
+cor.test(corr_reapp$trait_reappraisal, corr_reapp$mean_state_reapp_grand_centered, method = "spearman")
+
+ci_cor(corr_reapp, probs = c(0.025, 0.975), method = "spearman", type = "bootstrap")
+
+# corr_reapp_z <- dat_processed %>% 
+#   mutate(mean_state_reapp_z = scale(mean_state_reapp),
+#          reapp_cerq_z = scale(trait_reappraisal)
+#          ) %>% 
+#   select(id, mean_state_reapp_z, reapp_cerq_z) %>% 
+#   distinct() %>% 
+#   select(-id)
+```
+
+## visualization
+```{r}
+corrplot_reappraisal <- 
+  ggplot(corr_reapp, aes(trait_reappraisal, mean_state_reapp_grand_centered)) +
+    geom_point(alpha = 0.5, position = "jitter") +
+    # geom_smooth(method = "lm", fill = "#BE7E9D", color = "#9b0a36") +
+    geom_smooth(method = "lm", fill = "#C7728F", color = "#8E2438") +
+    theme_classic() +
+    labs(x = "Trait rumination",
+         y = "State rumination\n(aggregated per person)"
+    ) +
+    theme(axis.title = element_text(size = 12),
+    panel.grid.minor.y = element_blank(),
+    axis.line = element_line()
+    )
+corrplot_reappraisal
+```
+
+
+# correlation between trait acceptance and state self-reflection measures
+
+## correlation
+```{r}
+corr_accept_reflect <- dat_processed %>% 
+  select(id, mean_state_reflect_grand_centered, trait_acceptance) %>% 
+  distinct() %>% 
+  select(-id)
+
+shapiro.test(corr_accept_reflect$trait_acceptance)
+shapiro.test(corr_accept_reflect$mean_state_reflect_grand_centered)
+# normality not assumed
+
+cor.test(corr_accept_reflect$trait_acceptance, corr_accept_reflect$mean_state_reflect_grand_centered, method = "spearman")
+
+ci_cor(corr_accept_reflect, probs = c(0.025, 0.975), method = "spearman", type = "bootstrap")
+
+# corr_accept_reflect_z <- dat_processed %>% 
+#   mutate(mean_state_reapp_z = scale(mean_state_reapp),
+#          reapp_cerq_z = scale(trait_acceptance)
+#          ) %>% 
+#   select(id, mean_state_reapp_z, reapp_cerq_z) %>% 
+#   distinct() %>% 
+#   select(-id)
+```
+
+## visualization
+```{r}
+corrplot_accept_reflect <- 
+  ggplot(corr_accept_reflect, aes(trait_acceptance, mean_state_reflect_grand_centered)) +
+    geom_point(alpha = 0.5, position = "jitter") +
+    # geom_smooth(method = "lm", fill = "#BE7E9D", color = "#9b0a36") +
+    geom_smooth(method = "lm", fill = "#C7728F", color = "#8E2438") +
+    theme_classic() +
+    labs(x = "Trait rumination",
+         y = "State rumination\n(aggregated per person)"
+    ) +
+    theme(axis.title = element_text(size = 12),
+    panel.grid.minor.y = element_blank(),
+    axis.line = element_line()
+    )
+corrplot_accept_reflect
+```
+

@@ -3,6 +3,8 @@ title: "05_visualization"
 author: "Flora"
 date: "2022-10-22"
 output: html_document
+editor_options: 
+  chunk_output_type: inline
 ---
 
 # loading packages
@@ -181,7 +183,8 @@ trait_rumi_plot <- dat_model_visu %>%
 
 
 # multipanel figure
-multipanel_figure <- state_rumi_plot + mean_state_rumi_plot + trait_rumi_plot
+multipanel_figure_EN <- state_rumi_plot + mean_state_rumi_plot + trait_rumi_plot
+multipanel_figure_EN
 ```
 
 
@@ -193,7 +196,7 @@ state_rumi_plot_HU <- dat_model_visu %>%
   geom_jitter(color = "black", alpha = 0.05, size = 2) +
   geom_smooth(method = "lm",
               size = 2.5,
-              color = "#7581A7") +
+              color = "#B0CDB6") +
    labs(x     = "Állapot-rumináció",
         y     = "Negatív érzelmi állapot",
         title = "A") +
@@ -226,7 +229,7 @@ trait_rumi_plot_HU <- dat_model_visu %>%
   geom_jitter(color = "black", alpha = 0.05, size = 2) +
   geom_smooth(method = "lm",
               size = 2.5,
-              color = "#B0CDB6") +
+              color = "#7581A7") +
    labs(x     = "Vonás-rumináció",
         y     = "",
         title = "C") +
@@ -238,7 +241,8 @@ trait_rumi_plot_HU <- dat_model_visu %>%
 
 
 # multipanel figure
-multipanel_figure <- state_rumi_plot + mean_state_rumi_plot + trait_rumi_plot
+multipanel_figure_HU <- state_rumi_plot_HU + mean_state_rumi_plot_HU + trait_rumi_plot_HU
+multipanel_figure_HU
 ```
 
 

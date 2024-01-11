@@ -8,10 +8,10 @@ editor_options:
 ---
 
 # loading packages
+
 ```{r}
 options(scipen = 999)
 
-suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(sjPlot))
 suppressPackageStartupMessages(library(lme4))
 suppressPackageStartupMessages(library(psych))
@@ -19,26 +19,27 @@ suppressPackageStartupMessages(library(readxl))
 suppressPackageStartupMessages(library(ggpubr))
 suppressPackageStartupMessages(library(lubridate))
 suppressPackageStartupMessages(library(confintr))
+suppressPackageStartupMessages(library(ppcor))
 suppressPackageStartupMessages(library(rcompanion))
 suppressPackageStartupMessages(library(showtext))
+suppressPackageStartupMessages(library(extrafont))
+suppressPackageStartupMessages(library(tidyverse))
 
 loadfonts(device = "all")
 font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
 showtext_auto()
-
-options(scipen = 999)
 ```
 
+# importing datasets
 
-# importing and joining datasets of self-reports and behavioural assessments
 ```{r message=FALSE}
 dat_pre <- read_xlsx("data/dat_pre.xlsx")
 dat_processed <- read_csv("data/data_processed.csv")
 dat_unfiltered <- read_csv("data/data_unfiltered.csv")
 ```
 
-
 # filtering datasets
+
 ```{r}
 # cleaning pre
 dat_pre_clean <- dat_pre %>% 
@@ -60,10 +61,10 @@ dat_not_included <- dat_pre_clean %>%
   anti_join(dat_processed_distinct, by = c("age", "gender", "edu", "rum_cerq", "ended_pre"))
 ```
 
-
 # sample demographics
 
 ## cross-sectional = initial
+
 ```{r}
 # number and age of participants  
 dat_pre_clean %>% 
@@ -116,9 +117,9 @@ dat_pre_clean %>%
             Range_min = min(rum_cerq),
             Range_max = max(rum_cerq))
 ```
-
 
 ## not included
+
 ```{r}
 # number and age of participants  
 dat_not_included %>% 
@@ -172,8 +173,8 @@ dat_not_included %>%
             Range_max = max(rum_cerq))
 ```
 
-
 ## proceeded to ESM phase = final sample
+
 ```{r}
 # number and age of participants  
 dat_processed %>%
@@ -240,10 +241,10 @@ dat_processed %>%
             Range_max = max(rum_cerq))
 ```
 
-
 # descriptives
 
 ## descriptives of ESM surveys in final sample
+
 ```{r}
 # total number of completed esm surveys
 dat_processed %>%
@@ -314,8 +315,8 @@ dat_processed %>%
   )
 ```
 
-
 ## statistical tests to compare initial and final samples
+
 ```{r}
 # test for median age
   # normality test
@@ -344,7 +345,7 @@ dat_processed %>%
   cramersv(edu_chisq)
   
 
-# test for median trait rumination
+# test for median mss scores
   # normality test
   shapiro.test(dat_not_included$rum_cerq)
   shapiro.test(dat_processed_distinct$rum_cerq)
@@ -354,10 +355,10 @@ dat_processed %>%
   wilcox.test(dat_not_included$rum_cerq, dat_processed_distinct$rum_cerq)
 ```
 
-
 # calculating compliance in final sample
 
 ## compliance on ESM surveys
+
 ```{r}
 # filter dataset
 dat_unfiltered <- dat_unfiltered %>% 
@@ -403,7 +404,7 @@ dat_unfiltered_figure <- dat_unfiltered %>%
   distinct()
   
 ggplot(dat_unfiltered_figure) +
-  geom_histogram(aes(esm_compl_final), bins = 20, fill = "#609CCE", color = "#436d90") +
+  geom_histogram(aes(esm_compl_final), bins = 20, fill = "#A9A9A9") +
   theme_classic() +
   labs(
     x = "Compliance rate (%)",
@@ -412,9 +413,11 @@ ggplot(dat_unfiltered_figure) +
   theme(axis.title = element_text(size = 12))
 ```
 
-
 # correlation between trait and state rumination measures
-```{r fig.height=1.5, fig.width=4}
+
+## correlation
+
+```{r}
 corr_rumi <- dat_processed %>% 
   select(id, mean_state_rumi_grand_centered, trait_rumination) %>% 
   distinct() %>% 
@@ -435,32 +438,63 @@ corr_rumi_z <- dat_processed %>%
   select(id, mean_state_rumi_z, rum_cerq_z) %>% 
   distinct() %>% 
   select(-id)
+```
 
+## partial correlation
+
+```{r}
+# filter and join
+dat_unfiltered_maxday <- dat_unfiltered %>% 
+  select(id_emo, max_day_esm) %>% 
+  distinct()
+
+dat_processed <- dat_processed %>% 
+  left_join(
+    dat_unfiltered_maxday, by = join_by(id == id_emo)
+            )
+
+corr_rumi_partial <- dat_processed %>% 
+  select(id, mean_state_rumi_grand_centered, trait_rumination, max_day_esm) %>% 
+  distinct() %>% 
+  select(-id)
+
+# partial correlation test
+pcor(corr_rumi_partial, method = "spearman")
+
+# semi-partial correlation test
+spcor(corr_rumi_partial, method= "spearman")
+```
+
+## visualization
+
+```{r}
 corrplot <- 
   ggplot(corr_rumi, aes(trait_rumination, mean_state_rumi_grand_centered)) +
-    geom_point(alpha = 0.5, position = "jitter", size = 2.5) +
-    geom_smooth(method = "lm", fill = "#F1B564", color = "#F19E64") +
+    geom_point(alpha = 0.5, position = "jitter") +
+    # geom_smooth(method = "lm", fill = "#BE7E9D", color = "#9b0a36") +
+    geom_smooth(method = "lm", fill = "#C7728F", color = "#8E2438") +
     theme_classic() +
     labs(x = "Trait rumination",
-         y = "Mean state rumination"
+         y = "State rumination\n(aggregated per person)"
     ) +
     theme(axis.title = element_text(size = 12),
-          axis.text = element_text(size = 18, color = "black")
-          # panel.grid.minor.y = element_blank(),
-          # axis.line = element_line()
+    panel.grid.minor.y = element_blank(),
+    axis.line = element_line()
     )
 corrplot
+
+# ggsave("Figure2.jpg", corrplot, width = 15, height = 10, dpi = 600)
 
 # HU
 ggplot(corr_rumi, aes(trait_rumination, mean_state_rumi_grand_centered)) +
   geom_point(alpha = 0.5, position = "jitter") +
-  geom_smooth(method = "lm", fill = "#F1B564", color = "#F19E64") +
+  geom_smooth(method = "lm", fill = "#B085BB", color = "#823D93") +
   theme_classic() +
   labs(x = "Vonás-rumináció",
-       y = "Átlagos állapot-rumináció"
+       y = "Állapot-rumináció\n(személyenként átlagolva)"
   ) +
   theme(
     axis.title = element_text(size = 12),
     text = element_text(family = "Cooper Hewitt")
-    )
+  )
 ```

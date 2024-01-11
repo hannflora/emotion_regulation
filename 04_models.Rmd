@@ -60,7 +60,7 @@ baseline_model <-
       (event_unpleasantness_centered | id), data = dat_model)
 
 summary(baseline_model)
-tab_model(baseline_model, show.std = T)
+tab_model(baseline_model, show.std = T, digits = 3, digits.re = 3)
 AIC(baseline_model)
 BIC(baseline_model)
 check_collinearity(baseline_model)
@@ -124,8 +124,8 @@ coefplot_trait <-
              std.est = T,
              title = "",
              show.values = TRUE,
-             colors = "black",
-             value.size = 4,
+             colors = "#7581A7",
+             value.size = 6,
              dot.size = 3,
              line.size = 1.2,
              axis.labels = c("Trait rumination * Perceived stress", "Trait rumination"),
@@ -133,8 +133,8 @@ coefplot_trait <-
              ) +
              ylim(0, 0.6) +
              theme_minimal() +
-             theme(axis.text = element_text(size = 10, color = "black"),
-                   axis.title.x = element_text(size = 12, color = "black"),
+             theme(axis.text = element_text(size = 14, color = "black"),
+                   axis.title.x = element_text(size = 14, color = "black"),
                    axis.line = element_line(size = .3),
                    # text = element_text(family = "Cooper Hewitt")
              )
@@ -167,8 +167,8 @@ coefplot_mean_state <-
              std.est = T,
              title = "",
              show.values = TRUE,
-             colors = "black",
-             value.size = 4,
+             colors = "#FFBF69",
+             value.size = 6,
              dot.size = 3,
              line.size = 1.2,
              axis.labels = c("Mean state rumination * Perceived stress", "Mean state rumination"),
@@ -176,8 +176,8 @@ coefplot_mean_state <-
              ) +
              ylim(0, 0.6) +
              theme_minimal() +
-             theme(axis.text = element_text(size = 10, color = "black"),
-                   axis.title.x = element_text(size = 12, color = "black"),
+             theme(axis.text = element_text(size = 14, color = "black"),
+                   axis.title.x = element_text(size = 14, color = "black"),
                    axis.line = element_line(size = .3),
                    # text = element_text(family = "Cooper Hewitt")
              )
@@ -211,8 +211,8 @@ coefplot_state <-
              std.est = T,
              title = "",
              show.values = TRUE,
-             colors = "black",
-             value.size = 4,
+             colors = "#B0CDB6",
+             value.size = 6,
              dot.size = 3,
              line.size = 1.2,
              axis.labels = c("State rumination * Perceived stress", "State rumination"),
@@ -220,8 +220,8 @@ coefplot_state <-
              ) +
              ylim(0, 0.6) +
              theme_minimal() +
-             theme(axis.text = element_text(size = 10, color = "black"),
-                   axis.title.x = element_text(size = 12, color = "black"),
+             theme(axis.text = element_text(size = 14, color = "black"),
+                   axis.title.x = element_text(size = 14, color = "black"),
                    axis.line = element_line(size = .3),
                    # text = element_text(family = "Cooper Hewitt")
              )
@@ -242,7 +242,7 @@ full_model <-
       control = lmerControl(optCtrl=list(ftol_abs=1e-8,xtol_abs=1e-8))
   )
 
-tab_model(full_model, show.std = T)
+tab_model(full_model, show.std = T, digits = 3, digits.re = 3)
 summary(full_model)
 plot_model(full_model, type = "eff")
 # check_model(full_model)
