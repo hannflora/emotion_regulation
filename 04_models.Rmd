@@ -7,7 +7,7 @@ output:
     fig_width: 12
     fig_height: 4
 editor_options:
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 # About AIC and BIC:
@@ -31,6 +31,7 @@ suppressPackageStartupMessages(library(lme4))
 suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(library(matrixStats))
 suppressPackageStartupMessages(library(performance))
+suppressPackageStartupMessages(library(see))
 suppressPackageStartupMessages(library(lmerTest))
 suppressPackageStartupMessages(library(nortest))
 suppressPackageStartupMessages(library(extrafont))
@@ -53,7 +54,7 @@ dat_model <- read_csv("data/data_model.csv")
 
 # baseline model
 ```{r paged.print=FALSE}
-baseline_model <-
+baseline_model <- asdfasdf 
   
   lmer(NA_sum ~ age + gender + beep + day + 
       event_unpleasantness_centered +
@@ -64,6 +65,7 @@ tab_model(baseline_model, show.std = T, digits = 3, digits.re = 3)
 AIC(baseline_model)
 BIC(baseline_model)
 check_collinearity(baseline_model)
+# check_autocorrelation(baseline_model)
 # check_model(baseline_model)
 plot_model(baseline_model, type = "diag")
 plot_model(baseline_model, type = "eff")
