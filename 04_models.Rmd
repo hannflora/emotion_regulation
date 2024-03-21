@@ -54,7 +54,7 @@ dat_model <- read_csv("data/data_model.csv")
 
 # baseline model
 ```{r paged.print=FALSE}
-baseline_model <- asdfasdf 
+baseline_model <- 
   
   lmer(NA_sum ~ age + gender + beep + day + 
       event_unpleasantness_centered +
