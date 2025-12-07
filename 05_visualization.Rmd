@@ -1,0 +1,300 @@
+---
+title: "05_visualization"
+author: "Flora"
+date: "2022-10-22"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+# loading packages
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(psych))
+suppressPackageStartupMessages(library(matrixStats))
+suppressPackageStartupMessages(library(performance))
+suppressPackageStartupMessages(library(lmerTest))
+suppressPackageStartupMessages(library(nortest))
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(rcartocolor))
+suppressPackageStartupMessages(library(patchwork))
+suppressPackageStartupMessages(library(jpeg))
+# suppressPackageStartupMessages(library(showtext))
+# suppressPackageStartupMessages(library(extrafont))
+
+
+# loadfonts(device = "all")
+# font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
+# showtext_auto()
+
+options(scipen = 999)
+```
+
+
+# color setup
+```{r}
+source("color_setup/set_colors.R")
+```
+
+
+# reading dataset
+```{r message=FALSE}
+dat_model <- read_csv("data/data_model.csv")
+```
+
+
+# grouping by z-scores (FFR: can be done using the 'scale' function)
+```{r}
+dat_model_visu <- dat_model %>%
+  mutate(
+    z_trait_rumi = scale(trait_rumination),
+    z_mean_state_rumi = scale(mean_state_rumi_grand_centered),
+    z_state_rumi = scale(rumination_centered),
+    z_NA_sum = scale(NA_sum),
+
+    z_trait_rumi_group = ifelse(z_trait_rumi > 1,
+                                "+1 SD",
+                                ifelse(z_trait_rumi < 1 & z_trait_rumi > -1,
+                                       "mean",
+                                       "-1 SD"
+                                       )
+                                ),
+    z_mean_state_rumi_group = ifelse(z_mean_state_rumi > 1,
+                                "+1 SD",
+                                ifelse(z_mean_state_rumi < 1 & z_mean_state_rumi > -1,
+                                       "mean",
+                                       "-1 SD"
+                                       )
+                                ),
+    z_state_rumi_group = ifelse(z_state_rumi > 1,
+                                "+1 SD",
+                                ifelse(z_state_rumi < 1 & z_state_rumi > -1,
+                                       "mean",
+                                       "-1 SD"
+                                       )
+                                ),
+  )
+```
+
+
+# visualization of trait rumination
+```{r}
+dat_model_visu %>%
+  ggplot(aes(x = event_unpleasantness_centered, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(data = dat_model_visu %>% filter(z_trait_rumi_group %in% c("+1 SD", "-1 SD")),
+              mapping = aes(color = z_trait_rumi_group),
+              method = "lm",
+              size = 2.5) +
+  scale_color_manual(values = c(colors[["low"]][["Trait rumination"]],
+                                colors[["high"]][["Trait rumination"]])) +
+   labs(x     = "Perceived stress (within-person)",
+        y     = "Negative affect",
+        color = "Trait rumination",
+        title = "Trait rumination") +
+   guides(color = guide_legend(override.aes = list(alpha = c(alpha_low, 1 - alpha_low))))
+```
+
+
+# visualization of mean state rumination
+```{r}
+dat_model_visu %>%
+  ggplot(aes(x = event_unpleasantness_centered, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(data = dat_model_visu,
+              mapping = aes(linetype = z_mean_state_rumi_group),
+              method = "lm",
+              color = colors[["tasks"]][["Mean state rumination"]],
+              size = 1.5) +
+  scale_linetype_manual(values = c(1, 2)) +
+   labs(x     = "Perceived stress (within-person)",
+        y     = "Negative affect",
+        color = "Mean state rumination",
+        title = "Mean state rumination") +
+   guides(linetype = guide_legend(keywidth = 5, keyheight = 2)) +
+  theme_classic()
+```
+
+# visualization of state rumination
+```{r}
+dat_model_visu %>%
+  ggplot(aes(x = event_unpleasantness_centered, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(data = dat_model_visu %>% filter(z_state_rumi_group %in% c("+1 SD", "-1 SD")),
+              mapping = aes(color = z_state_rumi_group),
+              method = "lm",
+              size = 2.5) +
+  scale_color_manual(values = c(colors[["low"]][["State rumination"]],
+                                colors[["high"]][["State rumination"]])) +
+   labs(x     = "Perceived stress (within-person)",
+        y     = "Negative affect",
+        color = "State rumination",
+        title    = "State rumination") +
+   guides(color = guide_legend(override.aes = list(alpha = c(alpha_low, 1 - alpha_low))))
+```
+
+
+# visualization of all three measures
+```{r fig.height=4, fig.width=11}
+# state rumination
+state_rumi_plot <- dat_model_visu %>% 
+  ggplot(aes(x = rumination_centered, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(method = "lm",
+              size = 2.5,
+              color = "#219C19") +
+   labs(x     = "State rumination",
+        y     = "Negative affect",
+        title = "A") +
+  theme_classic() +
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 10))
+
+# mean state rumination
+mean_state_rumi_plot <- dat_model_visu %>% 
+  ggplot(aes(x = mean_state_rumi_grand_centered, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(method = "lm",
+              size = 2.5,
+              color = "#FF9500") +
+   labs(x     = "Mean state rumination",
+        y     = "",
+        title = "B") +
+  theme_classic() +
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 10))
+
+
+# trait rumination
+trait_rumi_plot <- dat_model_visu %>% 
+  ggplot(aes(x = trait_rumination, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(method = "lm",
+              size = 2.5,
+              color = "#609CCE") +
+   labs(x     = "Trait rumination",
+        y     = "",
+        title = "C") +
+  theme_classic() +
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 10))
+
+
+# multipanel figure
+multipanel_figure_EN <- state_rumi_plot + mean_state_rumi_plot + trait_rumi_plot
+multipanel_figure_EN
+```
+
+
+# visualization of all three measures [HU]
+```{r fig.height=4, fig.width=11}
+# state rumination
+state_rumi_plot_HU <- dat_model_visu %>% 
+  ggplot(aes(x = rumination_centered, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(method = "lm",
+              size = 2.5,
+              color = "#B0CDB6") +
+   labs(x     = "Állapot-rumináció",
+        y     = "Negatív érzelmi állapot",
+        title = "A") +
+  theme_classic() +
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 10),
+        text = element_text(family = "Cooper Hewitt")
+        )
+
+# mean state rumination
+mean_state_rumi_plot_HU <- dat_model_visu %>% 
+  ggplot(aes(x = mean_state_rumi_grand_centered, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(method = "lm",
+              size = 2.5,
+              color = "#FFBF69") +
+   labs(x     = "Átlagos állapot-rumináció",
+        y     = "",
+        title = "B") +
+  theme_classic() +
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 10),
+        text = element_text(family = "Cooper Hewitt")
+        )
+
+
+# trait rumination
+trait_rumi_plot_HU <- dat_model_visu %>% 
+  ggplot(aes(x = trait_rumination, y = NA_sum)) +
+  geom_jitter(color = "black", alpha = 0.05, size = 2) +
+  geom_smooth(method = "lm",
+              size = 2.5,
+              color = "#7581A7") +
+   labs(x     = "Vonás-rumináció",
+        y     = "",
+        title = "C") +
+  theme_classic() +
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 10),
+        text = element_text(family = "Cooper Hewitt")
+        )
+
+
+# multipanel figure
+multipanel_figure_HU <- state_rumi_plot_HU + mean_state_rumi_plot_HU + trait_rumi_plot_HU
+multipanel_figure_HU
+```
+
+
+# visualization of all three measures (everything Z-transformed)
+```{r fig.height=4, fig.width=11}
+# # state rumination
+# z_state_rumi_plot <- dat_model_visu %>% 
+#   ggplot(aes(x = z_state_rumi, y = z_NA_sum)) +
+#   geom_jitter(color = "black", alpha = 0.05, size = 2) +
+#   geom_smooth(method = "lm",
+#               size = 2.5,
+#               color = "#219C19") +
+#    labs(x     = "State rumination",
+#         y     = "Negative affect",
+#         title = "A") +
+#   theme_classic() +
+#   theme(axis.title = element_text(size = 14),
+#         axis.text = element_text(size = 10)) +
+#   xlim(-3.5, 6.5) + ylim(-1, 5)
+# 
+# # mean state rumination
+# z_mean_state_rumi_plot <- dat_model_visu %>% 
+#   ggplot(aes(x = z_mean_state_rumi, y = z_NA_sum)) +
+#   geom_jitter(color = "black", alpha = 0.05, size = 2) +
+#   geom_smooth(method = "lm",
+#               size = 2.5,
+#               color = "#FF9500") +
+#    labs(x     = "Mean state rumination",
+#         y     = "",
+#         title = "B") +
+#   theme_classic() +
+#   theme(axis.title = element_text(size = 14),
+#         axis.text = element_text(size = 10)) +
+#   xlim(-3.5, 6.5) + ylim(-1, 5)
+# 
+# 
+# # trait rumination
+# z_trait_rumi_plot <- dat_model_visu %>% 
+#   ggplot(aes(x = z_trait_rumi, y = z_NA_sum)) +
+#   geom_jitter(color = "black", alpha = 0.05, size = 2) +
+#   geom_smooth(method = "lm",
+#               size = 2.5,
+#               color = "#609CCE") +
+#    labs(x     = "Trait rumination",
+#         y     = "",
+#         title = "C") +
+#   theme_classic() +
+#   theme(axis.title = element_text(size = 14),
+#         axis.text = element_text(size = 10)) +
+#   xlim(-3.5, 6.5) + ylim(-1, 5)
+# 
+# 
+# # multipanel figure
+# z_multipanel_figure <- z_state_rumi_plot + z_mean_state_rumi_plot + z_trait_rumi_plot
+```

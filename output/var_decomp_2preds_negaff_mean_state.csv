@@ -1,0 +1,6 @@
+Component,Estimate [95%CI]
+fixed slopes (within),"0 [0, 0]"
+fixed slopes (between),"26.6 [21.5, 31.9]"
+slope variation (within),"0 [0, 0]"
+intercept variation (between),"25.1 [20, 30.2]"
+residual (within),"48.4 [43.9, 53]"

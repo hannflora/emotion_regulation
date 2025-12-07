@@ -1,0 +1,492 @@
+---
+title: "07_models_male"
+output:
+  html_document:
+    df_print: paged
+  html_notebook:
+    fig_width: 12
+    fig_height: 4
+editor_options:
+  chunk_output_type: console
+---
+
+# About AIC and BIC:
+
+## It seems the "difference of 2" rule of thumb is valid, based on these couple of descriptions I found. So essentially, if a model is 2 AIC units lower than the other, it is considered significantly better.
+https://www.scribbr.com/statistics/akaike-information-criterion/
+https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781118856406.app5
+https://towardsdatascience.com/introduction-to-aic-akaike-information-criterion-9c9ba1c96ced
+https://machinelearningmastery.com/probabilistic-model-selection-measures/
+
+## The difference between them (very simply put): AIC is best for prediction, while BIC is best for explanation. Also, BIC penalizes free parameters more strongly.
+https://stats.stackexchange.com/questions/577/is-there-any-reason-to-prefer-the-aic-or-bic-over-the-other
+
+
+
+# loading packages
+```{r}
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(psych))
+suppressPackageStartupMessages(library(matrixStats))
+suppressPackageStartupMessages(library(performance))
+suppressPackageStartupMessages(library(see))
+suppressPackageStartupMessages(library(lmerTest))
+suppressPackageStartupMessages(library(nortest))
+suppressPackageStartupMessages(library(extrafont))
+suppressPackageStartupMessages(library(car))
+suppressPackageStartupMessages(library(showtext))
+suppressPackageStartupMessages(library(lmeresampler))
+suppressPackageStartupMessages(library(boot))
+suppressPackageStartupMessages(library(tidyverse))
+
+loadfonts(device = "all")
+font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
+showtext_auto()
+
+options(scipen = 999)
+```
+
+
+# reading dataset
+```{r message=FALSE}
+dat_model_male <- read_csv("data/data_model.csv") %>% 
+  filter(gender == "Male")
+```
+
+
+# baseline model
+```{r paged.print=FALSE}
+# baseline_model <- 
+#   
+#   lmer(NA_sum ~ age + gender + beep + day + 
+#       event_unpleasantness_centered +
+#       (event_unpleasantness_centered | id), data = dat_model_male)
+# 
+# summary(baseline_model)
+# tab_model(baseline_model, show.std = T, digits = 3, digits.re = 3)
+# AIC(baseline_model)
+# BIC(baseline_model)
+# check_collinearity(baseline_model)
+# # check_autocorrelation(baseline_model)
+# # check_model(baseline_model)
+# plot_model(baseline_model, type = "diag")
+# plot_model(baseline_model, type = "eff")
+# 
+# # normality test for residuals
+# baseline_model_residuals <- residuals(baseline_model)
+# lillie.test(baseline_model_residuals)
+# 
+# # normality test for NA_sum
+# lillie.test(dat_model_male$NA_sum)
+```
+
+
+# baseline model with log10-transformed NA
+```{r paged.print=FALSE}
+# baseline_model_NA_log <-
+#   
+#   lmer(NA_sum_log ~ age + gender + beep + day + 
+#       event_unpleasantness_centered +
+#       (event_unpleasantness_centered | id), data = dat_model_male)
+# 
+# summary(baseline_model_NA_log)
+# tab_model(baseline_model_NA_log, show.std = T)
+# AIC(baseline_model_NA_log)
+# BIC(baseline_model_NA_log)
+# # check_model(baseline_model_NA_log)
+# plot_model(baseline_model_NA_log, type = "diag")
+# 
+# 
+# # normality test for residuals
+# baseline_model_NA_log_residuals <- residuals(baseline_model_NA_log)
+# lillie.test(baseline_model_NA_log_residuals)
+```
+
+
+# trait rumination
+```{r}
+trait_model_male <-
+
+  lmer(NA_sum ~ age + beep + day +
+      trait_rumination +
+      (1 | id), data = dat_model_male)
+
+tab_model(trait_model_male, show.std = T)
+AIC(trait_model_male)
+BIC(trait_model_male)
+# check_model(trait_model_male)
+```
+
+
+## coefplot for trait rumination
+```{r}
+coefplot_trait <- 
+  plot_model(trait_model,
+             type = "std",
+             rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "#7581A7",
+             value.size = 6,
+             dot.size = 3,
+             line.size = 1.2,
+             axis.labels = c("Trait rumination * Perceived stress", "Trait rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.6) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 14, color = "black"),
+                   axis.title.x = element_text(size = 14, color = "black"),
+                   axis.line = element_line(size = .3),
+                   # text = element_text(family = "Cooper Hewitt")
+             )
+coefplot_trait
+```
+
+
+# mean state rumination
+```{r}
+mean_state_model_male <-
+
+  lmer(NA_sum ~ age + beep + day +
+      mean_state_rumi_grand_centered +
+      (1 | id), data = dat_model_male)
+
+tab_model(mean_state_model_male, show.std = T)
+AIC(mean_state_model_male)
+BIC(mean_state_model_male)
+# check_model(mean_state_model_male)
+```
+
+
+## coefplot for mean state rumination
+```{r}
+coefplot_mean_state <- 
+  plot_model(mean_state_model,
+             type = "std",
+             rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "#FFBF69",
+             value.size = 6,
+             dot.size = 3,
+             line.size = 1.2,
+             axis.labels = c("Mean state rumination * Perceived stress", "Mean state rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.6) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 14, color = "black"),
+                   axis.title.x = element_text(size = 14, color = "black"),
+                   axis.line = element_line(size = .3),
+                   # text = element_text(family = "Cooper Hewitt")
+             )
+coefplot_mean_state
+```
+
+
+# state rumination
+```{r}
+state_model_male <-
+
+  lmer(NA_sum ~ age + beep + day +
+      rumination_centered +
+      (1 | id), data = dat_model_male)
+
+tab_model(state_model_male, show.std = T)
+tab_model(trait_model_male, mean_state_model_male, state_model_male, show.std = T, show.aic = T)
+AIC(state_model_male)
+BIC(state_model_male)
+# check_model(state_model_male)
+```
+
+
+## coefplot for state rumination
+```{r}
+coefplot_state <- 
+  plot_model(state_model,
+             type = "std",
+             rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "#B0CDB6",
+             value.size = 6,
+             dot.size = 3,
+             line.size = 1.2,
+             axis.labels = c("State rumination * Perceived stress", "State rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.6) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 14, color = "black"),
+                   axis.title.x = element_text(size = 14, color = "black"),
+                   axis.line = element_line(size = .3),
+                   # text = element_text(family = "Cooper Hewitt")
+             )
+coefplot_state
+```
+
+
+# full model negaff
+```{r}
+full_model_male_negaff <-
+  
+  lmer(NA_sum ~
+      rumination_centered +  
+      mean_state_rumi_grand_centered +
+      trait_rumination +
+      
+      (rumination_centered | id), data = dat_model_male,
+      control = lmerControl(optCtrl=list(ftol_abs=1e-8,xtol_abs=1e-8))
+  )
+
+tab_model(full_model_male_negaff, show.std = T, digits = 3, digits.re = 3)
+summary(full_model_male_negaff)
+plot_model(full_model_male_negaff, type = "eff")
+# check_model(full_model_male_negaff)
+check_collinearity(full_model_male_negaff)
+plot_model(full_model_male_negaff, rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"), ci.lvl=0.95)
+AIC(full_model_male_negaff)
+BIC(full_model_male_negaff)
+
+# checking assumptions
+plot_model(full_model_male_negaff)
+```
+
+# full model posaff
+```{r}
+full_model_male_posaff <-
+  
+  lmer(PA_sum ~
+      rumination_centered +  
+      mean_state_rumi_grand_centered +
+      trait_rumination +
+      
+      (rumination_centered | id), data = dat_model_male,
+      control = lmerControl(optCtrl=list(ftol_abs=1e-8,xtol_abs=1e-8))
+  )
+
+tab_model(full_model_male_posaff, show.std = T, digits = 3, digits.re = 3)
+summary(full_model_male_posaff)
+plot_model(full_model_male_posaff, type = "eff")
+# check_model(full_model_male_posaff)
+check_collinearity(full_model_male_posaff)
+plot_model(full_model_male_posaff, rm.terms = c("age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"), ci.lvl=0.95)
+AIC(full_model_male_posaff)
+BIC(full_model_male_posaff)
+
+# checking assumptions
+plot_model(full_model_male_posaff)
+```
+
+# coefplots for full model negaff
+```{r}
+# plot for interactions (colored afterwards in photoshop)
+coefplot_interactions <- 
+  plot_model(full_model,
+             type = "std",
+             rm.terms = c("rumination_centered", "trait_rumination", "mean_state_rumi_grand_centered", "age", "gender [Male]", "gender [Other]",   "beep", "day", "event_unpleasantness_centered"),
+             ci.lvl = 0.95,
+             std.est = T,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             value.size = 6,
+             value.offset = .25,
+             dot.size = 4,
+             line.size = 1.2,
+             axis.labels = c("Trait rumination * Perceived stress", "Mean state rumination * Perceived stress", "State rumination * Perceived   stress"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 0.1) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black"),
+                   axis.line = element_line(size = .3),
+                   text = element_text(family = "Cooper Hewitt")
+             )
+coefplot_interactions
+
+# plot for main effects (colored afterwards in photoshop)
+coefplot_maineffects <- 
+  plot_model(full_model,
+             type = "std",
+             terms = c("rumination_centered", "mean_state_rumi_grand_centered", "trait_rumination"),
+             ci.lvl = 0.95,
+             std.est = TRUE,
+             title = "",
+             show.values = TRUE,
+             colors = "black",
+             value.size = 6,
+             value.offset = 0.25,
+             dot.size = 4,
+             line.size = 1.2,
+             axis.labels = c("Trait rumination", "Mean state rumination", "State rumination"),
+             axis.title = "Standardized β coefficients"
+             ) +
+             ylim(0, 1) +
+             theme_minimal() +
+             theme(axis.text = element_text(size = 10, color = "black"),
+                   axis.title.x = element_text(size = 12, color = "black"),
+                   axis.line = element_line(size = .3),
+                   text = element_text(family = "Cooper Hewitt")
+             )
+coefplot_maineffects
+```
+
+
+# coefplots for full model [HU]
+```{r}
+# plot for interactions (colored afterwards in photoshop)
+plot_model(full_model,
+           type = "std",
+           rm.terms = c("rumination_centered", "trait_rumination", "mean_state_rumi_grand_centered", "age", "gender [Male]", "gender [Other]", "beep", "day", "event_unpleasantness_centered"),
+           ci.lvl = 0.95,
+           std.est = T,
+           title = "",
+           show.values = TRUE,
+           colors = "black",
+           value.size = 4,
+           dot.size = 3,
+           line.size = 1.2,
+           axis.labels = c("vonás-rumináció * észlelt stressz", "átlagos állapot-rumináció * észlelt stressz", "állapot-rumináció * észlelt stressz"),
+           axis.title = "standardizált béta együtthatók"
+           ) +
+           ylim(0, 0.1) +
+           theme_minimal() +
+           theme(axis.text = element_text(size = 10, color = "black"),
+                 axis.title.x = element_text(size = 12, color = "black"),
+                 axis.line = element_line(size = .3),
+                 text = element_text(family = "Cooper Hewitt")
+           )
+
+# plot for main effects (colored afterwards in photoshop)
+plot_model(full_model,
+           type = "std",
+           terms = c("rumination_centered", "mean_state_rumi_grand_centered", "trait_rumination"),
+           ci.lvl = 0.95,
+           std.est = TRUE,
+           title = "",
+           show.values = TRUE,
+           colors = "black",
+           value.size = 4,
+           dot.size = 3,
+           line.size = 1.2,
+           axis.labels = c("vonás-rumináció", "átlagos állapot-rumináció", "állapot-rumináció"),
+           axis.title = "standardizált béta együtthatók"
+           ) +
+           ylim(0, 1) +
+           theme_minimal() +
+           theme(axis.text = element_text(size = 10, color = "black"),
+                 axis.title.x = element_text(size = 12, color = "black"),
+                 axis.line = element_line(size = .3),
+                 text = element_text(family = "Cooper Hewitt")
+           )
+```
+
+
+# full model with log10-transformed NA
+```{r}
+# full_model_NA_log <-
+#   
+#   lmer(NA_sum_log ~ age + gender + beep + day + 
+#       event_unpleasantness_centered * rumination_centered + 
+#       event_unpleasantness_centered * trait_rumination +
+#       event_unpleasantness_centered * mean_state_rumi_grand_centered +
+#       (event_unpleasantness_centered * rumination_centered | id), data = dat_model_male
+#       # control = lmerControl(optCtrl=list(ftol_abs=1e-8,xtol_abs=1e-8))
+#   )
+# 
+# tab_model(full_model_NA_log, show.std = T)
+# summary(full_model_NA_log)
+# plot_model(full_model_NA_log, type = "diag")
+# AIC(full_model_NA_log)
+# BIC(full_model_NA_log)
+```
+
+
+# saving models
+```{r}
+# saveRDS(full_model, "saved_models/full_model.rds")
+```
+
+
+# bootstrapping full model negaff
+## running bootstrap
+```{r}
+case_boot_full_model_male_negaff <-
+  bootstrap(
+    full_model_male_negaff,
+    .f = fixef,
+    type = "case",
+    B = 5000 ,
+    resample = c(TRUE, TRUE)
+  )
+
+saveRDS(case_boot_full_model_male_negaff, "bootstrapping/case_boot_full_model_male_negaff.rds")
+```
+
+## reading bootstrap file and extracting results into a list
+```{r}
+case_boot_full_model_male_negaff <- readRDS("bootstrapping/case_boot_full_model_male_negaff.rds")
+
+list_case_boot_full_model_male_negaff <-
+  list(case_boot_full_model_male_negaff)
+```
+
+## extracting bootstrapped coefficients
+```{r paged.print=TRUE}
+case_boot_ci_full_model_male_negaff_basic  <-
+  list_case_boot_full_model_male_negaff %>%
+  map(confint, type = "basic")
+case_boot_ci_full_model_male_negaff_basic
+
+case_boot_ci_full_model_male_negaff_perc  <-
+  list_case_boot_full_model_male_negaff %>%
+  map(confint, type = "perc")
+case_boot_ci_full_model_male_negaff_perc
+```
+
+
+# bootstrapping full model posaff
+## running bootstrap
+```{r}
+case_boot_full_model_male_posaff <-
+  bootstrap(
+    full_model_male_posaff,
+    .f = fixef,
+    type = "case",
+    B = 5000 ,
+    resample = c(TRUE, TRUE)
+  )
+
+saveRDS(case_boot_full_model_male_posaff, "bootstrapping/case_boot_full_model_male_posaff.rds")
+```
+
+## reading bootstrap file and extracting results into a list
+```{r}
+case_boot_full_model_male_posaff <- readRDS("bootstrapping/case_boot_full_model_male_posaff.rds")
+
+list_case_boot_full_model_male_posaff <-
+  list(case_boot_full_model_male_posaff)
+```
+
+## extracting bootstrapped coefficients
+```{r paged.print=TRUE}
+case_boot_ci_full_model_male_posaff_basic  <-
+  list_case_boot_full_model_male_posaff %>%
+  map(confint, type = "basic")
+case_boot_ci_full_model_male_posaff_basic
+
+case_boot_ci_full_model_male_posaff_perc  <-
+  list_case_boot_full_model_male_posaff %>%
+  map(confint, type = "perc")
+case_boot_ci_full_model_male_posaff_perc
+```

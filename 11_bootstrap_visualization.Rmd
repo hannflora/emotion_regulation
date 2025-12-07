@@ -1,0 +1,275 @@
+---
+title: "11_bootstrap_visualization"
+author: "Flora"
+date: "2024-10-18"
+output: html_document
+---
+
+# loading packages
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(psych))
+suppressPackageStartupMessages(library(matrixStats))
+suppressPackageStartupMessages(library(performance))
+suppressPackageStartupMessages(library(lmerTest))
+suppressPackageStartupMessages(library(nortest))
+suppressPackageStartupMessages(library(car))
+suppressPackageStartupMessages(library(lmeresampler))
+suppressPackageStartupMessages(library(cowplot))
+suppressPackageStartupMessages(library(boot))
+suppressPackageStartupMessages(library(ggpattern))
+suppressPackageStartupMessages(library(scales))
+
+options(scipen = 999)
+```
+
+# reading data
+
+```{r}
+dat_cases_boot_full_model_negaff_2pred_maineff_long <- read_csv("data/dat_cases_boot_full_model_negaff_2pred_maineff_long.csv", show_col_types = FALSE) %>% select(-...1)
+dat_cases_boot_full_model_posaff_2pred_maineff_long <- read_csv("data/dat_cases_boot_full_model_posaff_2pred_maineff_long.csv", show_col_types = FALSE) %>% select(-...1)
+```
+
+# plotting data
+
+## all predictors
+```{r}
+# Combine the datasets and add a domain variable
+combined_data <- bind_rows(
+  dat_cases_boot_full_model_negaff_maineff_long %>% mutate(domain = "negative"),
+  dat_cases_boot_full_model_posaff_maineff_long %>% mutate(domain = "positive")
+)
+
+
+# Plot
+combined_violin_plot <- ggplot(combined_data, 
+                               aes(x = rumination_measure, 
+                                   y = rumination_intensity, 
+                                   fill = rumination_measure,
+                                   pattern_color = rumination_measure,
+                                   pattern_fill = rumination_measure)) + 
+  
+  geom_segment(aes(x = 0, xend = 3.4, y = 0, yend = 0), color = "gray", linetype = 2, alpha = 0.4, linewidth = 1) +
+  geom_segment(aes(x = 0, xend = 3.4, y = 0.4, yend = 0.4), color = "gray", linetype = 2, alpha = 0.4, linewidth = 0.6) +
+  geom_segment(aes(x = 0, xend = 3.4, y = -0.4, yend = -0.4), color = "gray", linetype = 2, alpha = 0.4, linewidth = 0.6) +
+  
+  # Add violins for the negative domain with pattern
+  geom_violin_pattern(
+    data = combined_data %>% filter(domain == "negative"),
+    aes(x = rumination_measure, y = rumination_intensity), 
+    color = NA,
+    fill = NA,
+    pattern = "circle", 
+    pattern_angle = 45,
+    pattern_density = 0.7,
+    pattern_spacing = 0.012,
+    alpha = 0.6,
+    width = 1.2,
+    position = position_nudge(x = 0.1)
+  ) +
+  
+  # Add violins for the positive domain without pattern
+  geom_violin(
+    data = combined_data %>% filter(domain == "positive"),
+    aes(x = rumination_measure, y = rumination_intensity), 
+    color = NA,
+    alpha = 0.6,
+    width = 1.2,
+    position = position_nudge(x = -0.1)
+  ) +
+  
+  # Add boxplots for both domains
+  geom_boxplot(
+    data = combined_data %>% filter(domain == "negative"),
+    width = 0.2, fill = NA, outlier.shape = NA, linewidth = 0.6,
+    position = position_nudge(x = 0.1)) +
+
+  geom_boxplot(
+    data = combined_data %>% filter(domain == "positive"),
+    width = 0.2, fill = NA, outlier.shape = NA, linewidth = 0.6,
+    position = position_nudge(x = -0.1)
+) +
+  
+  # Customize the fill colors and the labels
+  scale_fill_manual(
+    values = c(scales::alpha("#FF9500", 0.6), scales::alpha("#219C19", 0.6), scales::alpha("#609CCE", 0.6)), 
+    labels = c("Mean State\nRumination", "State\nRumination", "Trait\nRumination")) +
+  scale_pattern_color_manual(
+    values = c(scales::alpha("#FF9500", 0.6), scales::alpha("#219C19", 0.6), scales::alpha("#609CCE", 0.6)),
+    labels = c("Mean State\nRumination", "State\nRumination", "Trait\nRumination")) +
+  scale_pattern_fill_manual(
+    values = c(scales::alpha("#FF9500", 0.6), scales::alpha("#219C19", 0.6), scales::alpha("#609CCE", 0.6)),
+    labels = c("Mean State\nRumination", "State\nRumination", "Trait\nRumination")) +
+  scale_x_discrete(labels = c("Mean State\nRumination", "State\nRumination", "Trait\nRumination")) +
+
+  
+  # Adjust y-axis limits and breaks
+  scale_y_continuous(breaks = seq(-0.8, 0.8, 0.4), limits = c(-0.8, 0.8)) +
+  
+  # Theme customization
+  theme_classic() +
+  theme(legend.position = "none", axis.text = element_text(size = 14), axis.title = element_text(size = 14)) +
+
+  
+  # geom_label(
+  #   aes(x = 1, y = 0.5, label = "Prediction of Positive Affect"),
+  #   size = NA,
+  #   color = "black",
+  #   fontface = "bold",
+  #   vjust = 0,
+  #   hjust = 0.5
+  #   )
+  
+  annotate(
+    geom = "text",
+    x = 3.5,
+    y = 0.4,
+    label = "Prediction of Negative Affect",
+    size = 5,
+    color = "black",
+    fontface = "bold",
+    vjust = -1
+  ) +
+  annotate(
+    geom = "text",
+    x = 3.5,
+    y = -0.4,
+    label = "Prediction of Positive Affect",
+    size = 5,
+    color = "black",
+    fontface = "bold",
+    vjust = -1
+  ) +
+  
+   # Axis labels and limits
+  labs(x = "", y = "Bootstrapped Estimates", title = "") +
+  coord_flip() +
+  expand_limits(x = c(1, 3.8))  # Extend beyond the original range to make room
+
+
+combined_violin_plot
+```
+
+
+## level 2 predictors only
+```{r}
+# Combine the datasets and add a domain variable
+combined_data <- bind_rows(
+  dat_cases_boot_full_model_negaff_2pred_maineff_long %>% mutate(domain = "negative"),
+  dat_cases_boot_full_model_posaff_2pred_maineff_long %>% mutate(domain = "positive")
+) %>% 
+  filter(rumination_measure %in% c("trait_rumination", "mean_state_rumination")
+         )
+
+
+# Plot
+combined_violin_plot <- ggplot(combined_data, 
+                               aes(x = rumination_measure, 
+                                   y = rumination_intensity, 
+                                   fill = rumination_measure,
+                                   pattern_color = rumination_measure,
+                                   pattern_fill = rumination_measure)) + 
+  
+  geom_segment(aes(x = 0, xend = 3, y = 0, yend = 0), color = "gray", linetype = 2, alpha = 0.4, linewidth = 1) +
+  geom_segment(aes(x = 0, xend = 3, y = 0.4, yend = 0.4), color = "gray", linetype = 2, alpha = 0.4, linewidth = 0.6) +
+  geom_segment(aes(x = 0, xend = 3, y = -0.4, yend = -0.4), color = "gray", linetype = 2, alpha = 0.4, linewidth = 0.6) +
+  
+  # Add violins for the negative domain with pattern
+  geom_violin_pattern(
+    data = combined_data %>% filter(domain == "negative"),
+    aes(x = rumination_measure, y = rumination_intensity), 
+    color = NA,
+    fill = NA,
+    pattern = "circle", 
+    pattern_angle = 45,
+    pattern_density = 0.7,
+    pattern_spacing = 0.012,
+    alpha = 0.6,
+    width = 1.2,
+    position = position_nudge(x = 0.1)
+  ) +
+  
+  # Add violins for the positive domain without pattern
+  geom_violin(
+    data = combined_data %>% filter(domain == "positive"),
+    aes(x = rumination_measure, y = rumination_intensity), 
+    color = NA,
+    alpha = 0.6,
+    width = 1.2,
+    position = position_nudge(x = -0.1)
+  ) +
+  
+  # Add boxplots for both domains
+  geom_boxplot(
+    data = combined_data %>% filter(domain == "negative"),
+    width = 0.2, fill = NA, outlier.shape = NA, linewidth = 0.6,
+    position = position_nudge(x = 0.1)) +
+
+  geom_boxplot(
+    data = combined_data %>% filter(domain == "positive"),
+    width = 0.2, fill = NA, outlier.shape = NA, linewidth = 0.6,
+    position = position_nudge(x = -0.1)
+) +
+  
+  # Customize the fill colors and the labels
+  scale_fill_manual(
+    values = c(scales::alpha("#FF9500", 0.6), scales::alpha("#609CCE", 0.6)), 
+    labels = c("Mean State\nRumination", "Global Self-report\nRumination")) +
+  scale_pattern_color_manual(
+    values = c(scales::alpha("#FF9500", 0.6), scales::alpha("#609CCE", 0.6)),
+    labels = c("Mean State\nRumination", "Global Self-report\nRumination")) +
+  scale_pattern_fill_manual(
+    values = c(scales::alpha("#FF9500", 0.6), scales::alpha("#609CCE", 0.6)),
+    labels = c("Mean State\nRumination", "Global Self-report\nRumination")) +
+  scale_x_discrete(labels = c("Mean State\nRumination", "Global Self-report\nRumination")) +
+
+  
+  # Adjust y-axis limits and breaks
+  scale_y_continuous(breaks = seq(-0.8, 0.8, 0.4), limits = c(-0.8, 0.8)) +
+  
+  # Theme customization
+  theme_classic() +
+  theme(legend.position = "none", axis.text = element_text(size = 14), axis.title = element_text(size = 14)) +
+
+  
+  # geom_label(
+  #   aes(x = 1, y = 0.5, label = "Prediction of Positive Affect"),
+  #   size = NA,
+  #   color = "black",
+  #   fontface = "bold",
+  #   vjust = 0,
+  #   hjust = 0.5
+  #   )
+  
+  annotate(
+    geom = "text",
+    x = 3,
+    y = 0.4,
+    label = "Prediction of Negative Affect",
+    size = 5,
+    color = "black",
+    fontface = "bold",
+    vjust = -1
+  ) +
+  annotate(
+    geom = "text",
+    x = 3,
+    y = -0.4,
+    label = "Prediction of Positive Affect",
+    size = 5,
+    color = "black",
+    fontface = "bold",
+    vjust = -1
+  ) +
+  
+   # Axis labels and limits
+  labs(x = "", y = "Bootstrapped Estimates", title = "") +
+  coord_flip() +
+  expand_limits(x = c(1.2, 3.3))
+
+
+combined_violin_plot
+```

@@ -1,0 +1,436 @@
+---
+title: "10_bootstrapping_posaff"
+author: "Flora"
+date: "2022-12-29"
+output: 
+  html_document: 
+    fig_caption: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+# loading packages
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(psych))
+suppressPackageStartupMessages(library(matrixStats))
+suppressPackageStartupMessages(library(performance))
+suppressPackageStartupMessages(library(lmerTest))
+suppressPackageStartupMessages(library(nortest))
+# suppressPackageStartupMessages(library(extrafont))
+suppressPackageStartupMessages(library(car))
+# suppressPackageStartupMessages(library(showtext))
+suppressPackageStartupMessages(library(lmeresampler))
+suppressPackageStartupMessages(library(boot))
+suppressPackageStartupMessages(library(ggpattern))
+
+# loadfonts(device = "all")
+# font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
+# showtext_auto()
+
+options(scipen = 999)
+```
+
+# reading saved models
+```{r}
+full_model_posaff <- readRDS("saved_models/full_model_posaff.rds")
+full_model_posaff <- readRDS("saved_models/full_model_posaff_2pred.rds")
+```
+
+
+# bootstrapping
+## cases bootstrap
+```{r}
+# cases_boot_full_model_posaff_2pred <-
+#   bootstrap(
+#     full_model_posaff,
+#     .f = fixef,
+#     type = "case",
+#     B = 5000 ,
+#     resample = c(TRUE, TRUE)
+#   )
+# 
+# saveRDS(cases_boot_full_model_posaff_2pred, "bootstrapping/cases_boot_full_model_posaff_2pred.rds")
+```
+
+
+### reading bootstrap file and extracting results into a list
+```{r}
+cases_boot_full_model_posaff_2pred <- readRDS("bootstrapping/cases_boot_full_model_posaff_2pred.rds")
+
+list_cases_boot_full_model_posaff_2pred <-
+  list(cases_boot_full_model_posaff_2pred)
+```
+
+
+### extracting bootstrapped coefficients
+```{r paged.print=TRUE}
+# cases_boot_ci_full_model_posaff  <-
+#   list_cases_boot_full_model_posaff %>%
+#   map(confint, type = "basic", na.rm = T)
+# cases_boot_ci_full_model_posaff
+# 
+# cases_boot_ci_full_model_posaff  <-
+#   list_cases_boot_full_model_posaff %>%
+#   map(confint, type = "perc")
+# cases_boot_ci_full_model_posaff
+
+boot_posaff_replicates_2pred <- cases_boot_full_model_posaff_2pred$replicates
+boot_posaff_confints_2pred <- boot_posaff_replicates_2pred %>% 
+  rename(intercept = "(Intercept)") %>% 
+  mutate(
+    intercept_lower = quantile(intercept, probs = 0.025),
+    intercept_upper = quantile(intercept, probs = 0.975),
+    
+    # age_lower = quantile(age, probs = 0.025),
+    # age_upper = quantile(age, probs = 0.975),
+    # 
+    # genderMale_lower = quantile(genderMale, probs = 0.025),
+    # genderMale_upper = quantile(genderMale, probs = 0.975),
+    # 
+    # genderOther_lower = quantile(genderOther, probs = 0.025, na.rm = T),
+    # genderOther_upper = quantile(genderOther, probs = 0.975, na.rm = T),
+    # 
+    # 
+    # beep_lower = quantile(beep, probs = 0.025), 
+    # beep_upper = quantile(beep, probs = 0.975),
+    # 
+    # day_lower = quantile(day, probs = 0.025),
+    # day_upper = quantile(day, probs = 0.975),
+    # 
+    # ruminationCentered_lower = quantile(rumination_centered, probs = 0.025),
+    # ruminationCentered_upper = quantile(rumination_centered, probs = 0.975),
+    
+    meanStateRumiGrandCentered_lower = quantile(mean_state_rumi_grand_centered, probs = 0.025),
+    meanStateRumiGrandCentered_upper = quantile(mean_state_rumi_grand_centered, probs = 0.975),
+    
+    traitRumination_lower = quantile(trait_rumination, probs = 0.025),
+    traitRumination_upper = quantile(trait_rumination, probs = 0.975)
+  ) %>% 
+  select(intercept_lower:traitRumination_upper) %>% 
+  unique() %>% 
+  pivot_longer(cols = c(intercept_lower:traitRumination_upper), names_to = c("variable", "bound"), names_sep = "_") %>% 
+  pivot_wider(names_from = bound, values_from = value) %>% 
+  rename(term = variable)
+
+boot_posaff_estimates_2pred <- as_tibble(cases_boot_full_model_posaff_2pred$observed) %>%
+  mutate(term = c("intercept", "meanStateRumiGrandCentered", "traitRumination")) %>% 
+  select(term, estimate = value) %>% 
+  full_join(boot_posaff_confints_2pred, by = "term") %>%
+  mutate(
+    term = c("intercept", "mean_state_rumination", "trait_rumination")
+  )
+```
+
+
+## residual bootstrap
+```{r}
+# residual_boot_full_model_posaff <-
+#   bootstrap(
+#     full_model_posaff,
+#     .f = fixef,
+#     type = "residual",
+#     B = 5000 ,
+#     resample = c(TRUE, TRUE)
+#   )
+# 
+# saveRDS(residual_boot_full_model_posaff, "bootstrapping/residual_boot_full_model_posaff.rds")
+```
+
+
+### reading bootstrap file and extracting results into a list
+```{r}
+residual_boot_full_model_posaff <- readRDS("bootstrapping/residual_boot_full_model_posaff.rds")
+
+list_residual_boot_full_model_posaff <-
+  list(residual_boot_full_model_posaff)
+```
+
+
+### extracting bootstrapped coefficients
+```{r paged.print=TRUE}
+residual_boot_ci_full_model_posaff_basic  <-
+  list_residual_boot_full_model_posaff %>%
+  map(confint, type = "basic")
+residual_boot_ci_full_model_posaff_basic
+
+residual_boot_ci_full_model_posaff_perc  <-
+  list_residual_boot_full_model_posaff %>%
+  map(confint, type = "perc")
+residual_boot_ci_full_model_posaff_perc
+```
+
+
+
+## parametric bootstrap
+```{r}
+# parametric_boot_full_model_posaff <-
+#   bootstrap(
+#     full_model_posaff,
+#     .f = fixef,
+#     type = "parametric",
+#     B = 5000 ,
+#     resample = c(TRUE, TRUE)
+#   )
+# 
+# saveRDS(parametric_boot_full_model_posaff, "bootstrapping/parametric_boot_full_model_posaff.rds")
+```
+
+
+### reading bootstrap file and extracting results into a list
+```{r}
+# parametric_boot_full_model_posaff <- readRDS("bootstrapping/parametric_boot_full_model_posaff.rds")
+# 
+# list_parametric_boot_full_model_posaff <- 
+#   list(parametric_boot_full_model_posaff)
+```
+
+
+### extracting bootstrapped coefficients
+```{r paged.print=TRUE}
+# parametric_boot_ci_full_model_posaff_basic  <-
+#   list_parametric_boot_full_model_posaff %>%
+#   map(confint, type = "basic")
+# parametric_boot_ci_full_model_posaff_basic
+# 
+# parametric_boot_ci_full_model_posaff_perc  <-
+#   list_parametric_boot_full_model_posaff %>%
+#   map(confint, type = "perc")
+# parametric_boot_ci_full_model_posaff_perc
+```
+
+
+
+# visualizing bootstrap results
+## cases bootstrap
+### main effects (prediction of negative affect)
+```{r echo=F}
+# extracting results into a tibble
+dat_cases_boot_full_model_posaff_2pred_maineff <-
+  list_cases_boot_full_model_posaff_2pred %>%
+  map("replicates") %>%
+  map(
+    ~tibble(
+      trait_rumination = na.omit(.x$trait_rumination),
+      mean_state_rumination = na.omit(.x$mean_state_rumi_grand_centered)
+    )
+  ) %>%
+  bind_rows()
+
+
+# rearranging tibble format
+dat_cases_boot_full_model_posaff_2pred_maineff_long <-
+  dat_cases_boot_full_model_posaff_2pred_maineff %>%
+  pivot_longer(c(trait_rumination, mean_state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
+
+# writing .csv
+write.csv(dat_cases_boot_full_model_posaff_2pred_maineff_long, "data/dat_cases_boot_full_model_posaff_2pred_maineff_long.csv")
+
+# plotting
+coef_cases_boot_full_model_posaff_maineff <-
+  dat_cases_boot_full_model_posaff_maineff_long %>%
+  ggplot(aes(rumination_intensity, fill = rumination_measure, linetype = rumination_measure)) +
+     geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) +
+     geom_density(alpha = .7, outline.type = "both") +
+     labs(
+       x = "Boostrapped estimates for the prediction of\npositive affect by different measures of rumination",
+       y = "Density",
+       title = "",
+       fill = "",
+       linetype = ""
+       ) +
+     theme_classic() +
+     theme(legend.position = c(0.8, 0.8)) +
+     scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination")) +
+     scale_color_manual("black") +
+     scale_linetype_manual(values = c("solid", "dashed", "dotted"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+coef_cases_boot_full_model_posaff_maineff
+
+
+## violin plot
+violin_cases_boot_full_model_posaff_maineff <- 
+  dat_cases_boot_full_model_posaff_maineff_long %>% 
+  ggplot(aes(x = rumination_measure, y = rumination_intensity, fill = rumination_measure, pattern_color = rumination_measure, pattern_fill = rumination_measure)) +
+  geom_violin_pattern(
+    color = NA,
+    fill = NA,
+    alpha = 1,
+    pattern = "crosshatch",
+    pattern_angle = 45,
+    pattern_density = 0.4,
+    pattern_spacing = 0.015,
+    width = 1.2,
+    ) +
+  geom_boxplot(width = 0.2, fill = NA, outlier.shape = NA, linewidth = 0.6) +
+  geom_hline(yintercept = 0, color = "black", linetype = 2, alpha = 0.4, linewidth = 1) +
+  labs(
+    x = "",
+    y = "Boostrapped estimates",
+    title = ""
+    ) +
+  theme_classic() +
+  coord_flip() +
+  scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"),
+                   labels = c("Mean state\nrumination", "State\nrumination", "Trait\nrumination")) +
+  scale_pattern_color_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state\nrumination", "State\nrumination", "Trait\nrumination"))+
+  scale_pattern_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state\nrumination", "State\nrumination", "Trait\nrumination"))+
+  scale_x_discrete(labels = c("Mean state\nrumination", "State\nrumination", "Trait\nrumination")) +
+  scale_y_continuous(
+    breaks = seq(-0.8, 0.8, 0.4),
+    limits = c(-0.8, 0.8)
+    ) +
+  theme(
+    legend.position = "none",
+    axis.text = element_text(size = 14),
+    axis.title = element_text(size = 16)
+  )
+
+violin_cases_boot_full_model_posaff_maineff
+```
+
+## residual bootstrap
+### main effects (prediction of positive affect)
+```{r echo=F}
+# extracting results into a tibble
+dat_residual_boot_full_model_posaff_maineff <- 
+  list_residual_boot_full_model_posaff %>% 
+  map("replicates") %>% 
+  map(
+    ~tibble(
+      trait_rumination = na.omit(.x$trait_rumination),
+      mean_state_rumination = na.omit(.x$mean_state_rumi_grand_centered),
+      state_rumination = na.omit(.x$rumination_centered)
+    )
+  ) %>%
+  bind_rows()
+
+
+# rearranging tibble format
+dat_residual_boot_full_model_posaff_maineff_long <- 
+  dat_residual_boot_full_model_posaff_maineff %>% 
+  pivot_longer(c(trait_rumination, mean_state_rumination, state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
+
+
+# plotting
+coef_residual_boot_full_model_posaff_maineff <- 
+  dat_residual_boot_full_model_posaff_maineff_long %>% 
+  ggplot(aes(rumination_intensity, fill = rumination_measure, linetype = rumination_measure)) +
+     geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
+     geom_density(alpha = .7, outline.type = "both") +
+     labs(
+       x = "Boostrapped raw estimates for the prediction of\nnegative affect by different measures of rumination",
+       y = "Density",
+       title = "",
+       fill = "",
+       linetype = ""
+       ) +
+     theme_classic() +
+     theme(legend.position = c(0.8, 0.8)) +
+     scale_fill_manual(values = c("#FF9500", "#219C19", "#609CCE"), labels = c("Mean state rumination", "State rumination", "Trait rumination")) +
+     scale_color_manual("black") +
+     scale_linetype_manual(values = c("solid", "dashed", "dotted"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+     
+coef_residual_boot_full_model_posaff_maineff
+```
+
+
+
+
+
+## parametric bootstrap
+### main effects (prediction of negative affect)
+```{r echo=F, fig.height=3, fig.width=10}
+# extracting results into a tibble
+dat_parametric_boot_full_model_maineff <- 
+  list_parametric_boot_full_model_posaff %>% 
+  map("replicates") %>% 
+  map(
+    ~tibble(
+      trait_rumination = na.omit(.x$trait_rumination),
+      mean_state_rumination = na.omit(.x$mean_state_rumi_grand_centered),
+      state_rumination = na.omit(.x$rumination_centered)
+    )
+  ) %>%
+  bind_rows()
+
+
+# rearranging tibble format
+dat_parametric_boot_full_model_maineff_long <- 
+  dat_parametric_boot_full_model_maineff %>% 
+  pivot_longer(c(trait_rumination, mean_state_rumination, state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
+
+
+# plotting
+coef_parametric_boot_full_model_maineff <- 
+  dat_parametric_boot_full_model_maineff_long %>% 
+  ggplot(aes(rumination_intensity, fill = rumination_measure)) +
+     geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
+     geom_density(alpha = .65, color = NA) +
+     labs(
+       x    = "Boostrapped raw estimates of the prediction of\nnegative affect by different measures of rumination",
+       y = "Density",
+       fill = "",
+       title    = ""
+       ) +
+     theme_classic() +
+     theme(axis.title = element_text(size = 14),
+           axis.text = element_text(size = 12),
+           text = element_text(family = "Cooper Hewitt")
+           ) +
+     scale_fill_manual(values = c("#AA0434", "#2174B2", "#A9CEB5"), labels = c("Mean state rumination", "State rumination", "Trait rumination"))
+coef_parametric_boot_full_model_maineff
+```
+
+
+### main effects (prediction of negative affect) [HU]
+```{r echo=F}
+# extracting results into a tibble
+dat_parametric_boot_full_model_maineff <- 
+  list_parametric_boot_full_model %>% 
+  map("replicates") %>% 
+  map(
+    ~tibble(
+      trait_rumination = na.omit(.x$trait_rumination),
+      mean_state_rumination = na.omit(.x$mean_state_rumi_grand_centered),
+      state_rumination = na.omit(.x$rumination_centered)
+    )
+  ) %>%
+  bind_rows()
+
+
+# rearranging tibble format
+dat_parametric_boot_full_model_maineff_long <- 
+  dat_parametric_boot_full_model_maineff %>% 
+  pivot_longer(c(trait_rumination, mean_state_rumination, state_rumination), names_to = "rumination_measure", values_to = "rumination_intensity")
+
+
+# plotting
+coef_parametric_boot_full_model_maineff_HU <- 
+  dat_parametric_boot_full_model_maineff_long %>% 
+  ggplot(aes(rumination_intensity, fill = rumination_measure)) +
+     geom_vline(xintercept = 0, color = "black", linetype = 2, alpha = .5, size = 1) + 
+     geom_density(alpha = .7, color = NA) +
+     labs(
+       x    = "Rumináció-mutatók negatív érzelmi\nállapotokat bejósló erejének bootsrappelt becslése",
+       y = "Sűrűség",
+       fill = "",
+       title    = ""
+       ) +
+     scale_fill_manual(values = c("#FFBF69", "#B0CDB6", "#7581A7"), labels = c("Átlagos állapot-rumináció", "Állapot-rumináció", "Vonás-rumináció")) +
+     theme_classic() +
+     theme(axis.title = element_text(size = 14),
+           axis.text = element_text(size = 10),
+           legend.text = element_text(size = 12),
+           text = element_text(family = "Cooper Hewitt")
+           )
+coef_parametric_boot_full_model_maineff_HU
+
+# jpeg(filename = "boot_maineaff_HU.jpeg", quality = 100)
+# coef_parametric_boot_full_model_maineff_HU
+# dev.off()
+```
+
+

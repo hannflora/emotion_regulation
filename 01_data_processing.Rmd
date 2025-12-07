@@ -1,34 +1,34 @@
 ---
 title: "01_data_processing"
-author: "Flora"
-output:
-  html_document:
-    df_print: paged
-editor_options:
+output: html_notebook
+editor_options: 
   chunk_output_type: inline
 ---
 
 # loading packages
 ```{r}
-suppressPackageStartupMessages(library(tidyverse))
+
 suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
 suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(library(lavaan))
 suppressPackageStartupMessages(library(semTools))
+suppressPackageStartupMessages(library(semPlot))
+suppressPackageStartupMessages(library(performance))
+suppressPackageStartupMessages(library(tidyverse))
 
 options(scipen = 999)
 ```
 
 
-# importing dataset
+# reading dataset
 ```{r message=FALSE, warning=FALSE}
 dat_cleaned <- read_csv("data/data_cleaned.csv")
 ```
 
 
-# tidying data
-
-## reordering and renaming variables
+# reordering and renaming variables
 ```{r warning=FALSE}
 # reordering variables
 dat_cleaned <- dat_cleaned %>% 
@@ -36,14 +36,13 @@ dat_cleaned <- dat_cleaned %>%
          sad:subc_psycho, cheerful = cheerfull, irritated:event_pleasantness, #esm
          cerq1:cerq36, sb_cerq:ob_cerq) # cross-sectional
 
-
 # renaming variables for consistency
 dat_cleaned <- dat_cleaned %>% 
   rename_at(vars(starts_with("cerq")), funs(str_replace(., "cerq", "cerq_")))
 ```
 
 
-## filling missing values in cross-sectional variables
+# filling missing values in cross-sectional variables
 ```{r}
 dat_cleaned <- dat_cleaned %>%
   group_by(id) %>% 
@@ -52,16 +51,35 @@ dat_cleaned <- dat_cleaned %>%
 ```
 
 
-## filtering obeservations with missing ESM data
+# filtering obeservations with missing ESM
 ```{r}
 dat_cleaned <- dat_cleaned %>% 
   filter(!is.na(date_emotics) & !is.na(day))
 ```
 
 
-# CFA and reliability
+# parallel analysis of affective states
+```{r}
+# prin <-
+#   dat_cleaned %>%
+#   select(sad, calm, afraid, unrested, enthusiastic, angry, worried, cheerful, irritated, active)
+# 
+# (parallel <- fa.parallel(prin, fm = "pa"))
+# 
+# (principal <-
+#     psych::principal(prin, nfactors = 2, rotate = "oblimin"))
+# 
+# # binding component scores to dataset
+# dat_cleaned <-
+#   dat_cleaned %>%
+#   cbind(as.data.frame(principal$scores)) %>%
+#   mutate(negaff = TC1,
+#          posaff = TC2) %>%
+#   select(-TC1, -TC2)
+```
 
-## CFA for rumination
+
+# CFA for trait rumination
 ```{r}
 dat_cfa_rum <- 
   dat_cleaned %>% 
@@ -74,8 +92,8 @@ fit_rumi <- cfa(model = cfa_rum, data = dat_cfa_rum, std.lv = TRUE, estimator = 
 ```
 
 ```{r}
-fitMeasures(fit_rumi, c("chisq", "df", "pvalue", "cfi",
-                        "tli", "rmsea", "srmr"))
+fitMeasures(fit_rumi, c("chisq", "df", "pvalue", "cfi", "tli",
+                   "rmsea", "srmr"))
 ```
 
 ```{r}
@@ -83,16 +101,17 @@ summary(fit_rumi, fit.measures = TRUE, standardize = TRUE)
 ```
 
 ```{r}
-# reliability of rumination factor (using omega)
+# reliability of rumination factor (omega)
 (reliability(fit_rumi))
 ```
 ```{r}
 # factor loadings
-inspect(fit_rumi, what="std")$lambda
+inspect(fit_rumi,what="std")$lambda
 ```
 
+
 ```{r}
-# adding rumination between-subject factor scores to main dataset
+# add rumination between-subject factor scores to the main dataset
 scores_cfa_rumination <-
   dat_cfa_rum %>%
   distinct() %>%
@@ -101,13 +120,102 @@ scores_cfa_rumination <-
 
 dat_cleaned <-
   dat_cleaned %>%
-  left_join(scores_cfa_rumination, by = "id")
+  left_join(scores_cfa_rumination, by = c("id"))
 ```
 
 
-# multilevel CFA for negative affective states
+# CFA for trait reappraisal
+```{r}
+# dat_cfa_reapp <- 
+#   dat_cleaned %>% 
+#   dplyr::select(id, cerq_8, cerq_14, cerq_27, cerq_35) %>%
+#   distinct()
+#   
+# cfa_reapp <- 'trait_reappraisal =~ cerq_8 + cerq_14 + cerq_27 + cerq_35'
+# 
+# fit_reapp <- cfa(model = cfa_reapp, data = dat_cfa_reapp, std.lv = TRUE, estimator = "ML")
+```
+
+```{r}
+# fitMeasures(fit_reapp, c("chisq", "df", "pvalue", "cfi", "tli",
+#                    "rmsea", "srmr"))
+```
+
+```{r}
+# summary(fit_reapp, fit.measures = TRUE, standardize = TRUE)
+```
+
+```{r}
+# # reliability of reappraisal factor (omega)
+# (reliability(fit_reapp))
+```
+```{r}
+# # factor loadings
+# inspect(fit_reapp, what="std")$lambda
+```
+
+```{r}
+# # add reappraisal between-subject factor scores to the main dataset
+# scores_cfa_reappraisal <-
+#   dat_cfa_reapp %>%
+#   distinct() %>%
+#   cbind(lavPredict(fit_reapp, newdata = dat_cfa_reapp[1:5])) %>%
+#   select(id, trait_reappraisal)
+# 
+# dat_cleaned <-
+#   dat_cleaned %>%
+#   left_join(scores_cfa_reappraisal, by = c("id"))
+```
+
+
+# CFA for trait acceptance
+```{r}
+# dat_cfa_accept <- 
+#   dat_cleaned %>% 
+#   dplyr::select(id, cerq_3, cerq_15, cerq_28, cerq_20) %>%
+#   distinct()
+#   
+# cfa_accept <- 'trait_acceptance =~ cerq_3 + cerq_15 + cerq_28 + cerq_20'
+# 
+# fit_accept <- cfa(model = cfa_accept, data = dat_cfa_accept, std.lv = TRUE, estimator = "ML")
+```
+
+```{r}
+# fitMeasures(fit_accept, c("chisq", "df", "pvalue", "cfi", "tli",
+#                    "rmsea", "srmr"))
+```
+
+```{r}
+# summary(fit_accept, fit.measures = TRUE, standardize = TRUE)
+```
+
+```{r}
+# # reliability of acceptance factor (omega)
+# (reliability(fit_accept))
+```
+```{r}
+# # factor loadings
+# inspect(fit_accept, what="std")$lambda
+```
+
+```{r}
+# omit item 20 and add acceptance between-subject factor scores to the main dataset
+# scores_cfa_acceptance <-
+#   dat_cfa_accept %>%
+#   distinct() %>%
+#   cbind(lavPredict(fit_accept, newdata = dat_cfa_accept[1:5])) %>%
+#   select(id, trait_acceptance)
+# 
+# dat_cleaned <-
+#   dat_cleaned %>%
+#   left_join(scores_cfa_acceptance, by = c("id"))
+```
+
+
+# multilevel CFA for affective states
+## negative affect
 ```{r, warning = F}
-cfa_aff <-
+cfa_negaff <-
   dat_cleaned %>%
   filter(!is.na(date_emotics)) %>%
   dplyr::select(id, date_emotics, beep, sad, afraid, unrested, irritated, angry) %>%
@@ -115,30 +223,33 @@ cfa_aff <-
   distinct() %>%
   ungroup()
 
-cfa_aff_syntax <- '
+cfa_negaff_syntax <- '
+
   level: 1
+
       NA_within =~ sad + afraid + unrested + angry
-      afraid ~~ angry
+
 
   level: 2
+
       NA_between =~ sad + afraid + unrested + angry
 '
-# "irritated" was omitted from the analysis as it worsened model fit
+# "irritated" has been omitted from the analysis since it worsened the fit of the model
 
-fit_aff <- cfa(model = cfa_aff_syntax, data = cfa_aff, cluster = "id", std.lv = TRUE, estimator = "ML")
+fit_negaff <- cfa(model = cfa_negaff_syntax, data = cfa_negaff, cluster = "id", std.lv = TRUE, estimator = "ML")
 ```
 
 ```{r}
-fitMeasures(fit_aff, c("chisq", "df", "pvalue", "cfi", "tli",
-                       "rmsea", "srmr_within", "srmr_between"))
+fitMeasures(fit_negaff, c("chisq", "df", "pvalue", "cfi", "tli",
+                   "rmsea", "srmr_within", "srmr_between"))
 ```
 
 ```{r}
-summary(fit_aff, fit.measures = TRUE, standardize = TRUE)
+summary(fit_negaff, fit.measures = TRUE, standardize = TRUE)
 ```
 
 ```{r}
-modificationindices(fit_aff) %>%
+modificationindices(fit_negaff) %>%
   dplyr::select("lhs", "op", "rhs", "level", "mi") %>%
   arrange(desc(mi)) %>%
   # filter(level == 1) %>% 
@@ -148,74 +259,188 @@ modificationindices(fit_aff) %>%
 
 ```{r}
 # within-person factor loadings
-(inspect(fit_aff, what = "std")$within$lambda)
+(inspect(fit_negaff, what = "std")$within$lambda)
 
 # between-person factor loadings
-(inspect(fit_aff, what = "std")$id$lambda)
+(inspect(fit_negaff, what = "std")$id$lambda)
 
-# reliability (using omega)
-(reliability(fit_aff))
+# reliability of NA model
+(reliability(fit_negaff))
 ```
 
 ```{r}
-# adding between subject factor scores to within subject factor scores
-dat_cfa_lev_2 <-
-  cfa_aff %>%
+# between subject factor score-okat hozzáadni a within subject-ekhez
+dat_cfa_negaff_lev_2 <-
+  cfa_negaff %>%
   dplyr::select(id) %>%
   distinct() %>%
-  cbind(lavPredict(fit_aff, newdata = cfa_aff[4:8], level = 2L))
+  cbind(lavPredict(fit_negaff, newdata = cfa_negaff[4:8], level = 2L))
 
-dat_cfa_lev_1 <-
-  cfa_aff %>%
-  cbind(lavPredict(fit_aff, newdata = cfa_aff[4:8], level = 1L)) %>%
+dat_cfa_negaff_lev_1 <-
+  cfa_negaff %>%
+  cbind(lavPredict(fit_negaff, newdata = cfa_negaff[4:8], level = 1L)) %>%
   dplyr::select(-c(sad:angry))
 
-dat_cfa <-
-  dat_cfa_lev_1 %>%
-  left_join(dat_cfa_lev_2, by = "id") %>%
-  mutate(NA_sum =  NA_within + NA_between)
+dat_cfa_negaff <-
+  dat_cfa_negaff_lev_1 %>%
+  left_join(dat_cfa_negaff_lev_2, by = "id") %>%
+  mutate(NA_sum = NA_within + NA_between)
 
 dat_cleaned <-
   dat_cleaned %>%
-  left_join(dat_cfa, by = c("id", "date_emotics", "beep"))
+  left_join(dat_cfa_negaff, by = c("id", "date_emotics", "beep"))
 ```
 
 
-# computing and centering aggregated mean of state rumintaion and event unpleasantness
+## positive affect
+```{r, warning = F}
+cfa_posaff <-
+  dat_cleaned %>%
+  filter(!is.na(date_emotics)) %>%
+  dplyr::select(id, date_emotics, beep, calm, enthusiastic, cheerful, active) %>%
+  filter_at(vars(calm:active), all_vars(!is.na(.))) %>%
+  distinct() %>%
+  ungroup()
+
+cfa_posaff_syntax <- '
+
+  level: 1
+
+      PA_within =~ calm + enthusiastic + cheerful + active
+      
+  level: 2
+
+      PA_between =~ calm + enthusiastic + cheerful + active
+'
+fit_posaff <- cfa(model = cfa_posaff_syntax, data = cfa_posaff, cluster = "id", std.lv = TRUE, estimator = "MLR")
+```
+
+```{r}
+fitMeasures(fit_posaff, c("chisq", "df", "pvalue", "cfi", "tli",
+                   "rmsea", "srmr_within", "srmr_between"))
+
+# enthusiastic	~~	active
+
+```
+
+```{r}
+summary(fit_posaff, fit.measures = TRUE, standardize = TRUE)
+```
+
+```{r}
+modificationindices(fit_posaff) %>%
+  dplyr::select("lhs", "op", "rhs", "level", "mi") %>%
+  arrange(desc(mi)) %>%
+  # filter(level == 1) %>% 
+  head(n = 10) %>%
+  print()
+```
+
+```{r}
+# within-person factor loadings
+(inspect(fit_posaff, what = "std")$within$lambda)
+
+# between-person factor loadings
+(inspect(fit_posaff, what = "std")$id$lambda)
+
+# reliability of PA model
+(reliability(fit_posaff))
+```
+
+```{r}
+# between subject factor score-okat hozzáadni a within subject-ekhez
+dat_cfa_lev_2 <-
+  cfa_posaff %>%
+  dplyr::select(id) %>%
+  distinct() %>%
+  cbind(lavPredict(fit_posaff, newdata = cfa_posaff[4:7], level = 2L))
+
+dat_cfa_lev_1 <-
+  cfa_posaff %>%
+  cbind(lavPredict(fit_posaff, newdata = cfa_posaff[4:7], level = 1L)) %>%
+  dplyr::select(-c(calm:active))
+
+dat_cfa_posaff <-
+  dat_cfa_lev_1 %>%
+  left_join(dat_cfa_lev_2, by = "id") %>%
+  mutate(PA_sum =  PA_within + PA_between)
+
+dat_cleaned <-
+  dat_cleaned %>%
+  left_join(dat_cfa_posaff, by = c("id", "date_emotics", "beep"))
+```
+
+
+# reliability of CERQ rumination scale
+```{r}
+dat_cleaned_cerq <- dat_cleaned %>%
+  dplyr::select(cerq_1, cerq_9, cerq_19, cerq_29) %>%
+  distinct()
+
+cronbachs_alpha(dat_cleaned_cerq)
+```
+
+
+# computing and centering aggregated mean of state rumintaion, reappraisal, self-reflection, and event unpleasantness
 ```{r}
 # rumination
 dat_cleaned <- dat_cleaned %>% 
   group_by(id) %>% 
-  mutate(mean_state_rumi = mean(regu_rumination, na.rm = TRUE), # between-person means
-         rumination_centered = scale(regu_rumination, center = T, scale = F) # within-person centering
-         ) %>% 
-  ungroup()
-
-dat_cleaned <- dat_cleaned %>% 
-  mutate(mean_state_rumi_grand_centered = scale(mean_state_rumi, center = T, scale = F)) # grand-mean centering
-
-
-# event unpleasantness
-  ## reversing event pleasantness to event unpleasantness
-  dat_cleaned <-
-    dat_cleaned %>% 
-    mutate(event_unpleasantness = 8-event_pleasantness) %>% 
-    dplyr::select(-event_pleasantness)
-  
-  
-  ## within-person centering of event unpleasantness and calculating between-person means
-  dat_cleaned <-
-    dat_cleaned %>% 
-    group_by(id) %>%
-    mutate(event_unpleasantness_centered = scale(event_unpleasantness, center = T, scale = F), # within-person centering
-           event_unpleasantness_mean = mean(event_unpleasantness, na.rm = T) # between-person means
-           ) %>%
-    distinct()
-```
+  mutate(
+    mean_state_rumi = mean(regu_rumination, na.rm = TRUE), # mean state rumination variable: computing between-person means
+    rumination_within_centered = scale(regu_rumination, center = T, scale = F) # state rumination variable: within-person centering momentary measures
+    ) %>% 
+  ungroup() %>% 
+  mutate(
+    rumination_centered = scale(rumination_within_centered, center = F, scale = T), # within-centered state rumination variable: grand scaling
+    mean_state_rumi_grand_centered = scale(mean_state_rumi, center = T, scale = T ) # grand-mean centering and grand scaling mean state rumination variable
+    ) %>% 
+  select(id:ended_pre, regu_rumination, mean_state_rumi:mean_state_rumi_grand_centered, everything())
 
 
-# creating .csv file for running descriptive statistics
-```{r}
+# # reappraisal
+# dat_cleaned <- dat_cleaned %>%
+#   group_by(id) %>%
+#   mutate(mean_state_reapp = mean(regu_reappraisal, na.rm = TRUE), # between-person means
+#          reapp_centered = scale(regu_reappraisal, center = T, scale = F) # within-person centering
+#          ) %>%
+#   ungroup()
+# 
+# dat_cleaned <- dat_cleaned %>%
+#   mutate(mean_state_reapp_grand_centered = scale(mean_state_reapp, center = T, scale = F)) # grand-mean centering
+
+
+# # self_reflection
+# dat_cleaned <- dat_cleaned %>%
+#   group_by(id) %>%
+#   mutate(mean_state_reflect = mean(regu_reflection, na.rm = TRUE), # between-person means
+#          reflect_centered = scale(regu_reflection, center = T, scale = F) # within-person centering
+#          ) %>%
+#   ungroup()
+# 
+# dat_cleaned <- dat_cleaned %>%
+#   mutate(mean_state_reflect_grand_centered = scale(mean_state_reflect, center = T, scale = F)) # grand-mean centering
+
+
+# # event unpleasantness
+#   # reversing event pleasantness to event unpleasantness
+#   dat_cleaned <-
+#     dat_cleaned %>%
+#     mutate(event_unpleasantness = 8-event_pleasantness) %>%
+#     dplyr::select(-event_pleasantness)
+
+
+  # # within-person centering of event unpleasantness and calculating between-person means
+  # dat_cleaned <-
+  #   dat_cleaned %>%
+  #   group_by(id) %>%
+  #   mutate(event_unpleasantness_centered = scale(event_unpleasantness, center = T, scale = F), # within-person centering
+  #          event_unpleasantness_mean = mean(event_unpleasantness, na.rm = T) # between-person means
+  #          ) %>%
+  #   distinct()
+
+
+# creating .csv file
 dat_cleaned %>% 
   write.csv("data/data_processed.csv", row.names = F)
 ```
@@ -223,15 +448,15 @@ dat_cleaned %>%
 
 # log10-transforming NA_sum
 ```{r}
-dat_cleaned <- dat_cleaned %>% 
-  mutate(NA_sum_log = log10(NA_sum + 2))
+# dat_cleaned <- dat_cleaned %>% 
+#   mutate(NA_sum_log = log10(NA_sum + 2))
 ```
 
 
 # selecting model-relevant variables and converting gender into factor
 ```{r}
 dat_model <- dat_cleaned %>%
-  select(id:edu, event_unpleasantness_centered, trait_rumination, NA_within:NA_sum, NA_sum_log, mean_state_rumi, rumination_centered, mean_state_rumi_grand_centered) %>% 
+  select(id:edu, trait_rumination, NA_within:NA_sum, PA_within:PA_sum, mean_state_rumi, rumination_centered, mean_state_rumi_grand_centered) %>% 
   mutate(gender = factor(gender, levels = c(1, 2, 3), labels = c("Female", "Male", "Other"))
   )
 ```
@@ -240,14 +465,16 @@ dat_model <- dat_cleaned %>%
 # distribution of NA_sum
 ```{r}
 hist(dat_model$NA_sum)
-hist(dat_model$NA_sum_log)
-
+# hist(dat_model$NA_sum_log)
 ```
 
+# distribution of PA_sum
+```{r}
+hist(dat_model$PA_sum)
+```
 
-# writing dat_model into .csv file for running models
+# writing dat_model into .csv file
 ```{r}
 dat_model %>%
   write.csv("data/data_model.csv", row.names = F)
 ```
-

@@ -1,0 +1,901 @@
+---
+title: "04_descriptive_stats"
+author: "Flora"
+date: "2022-08-25"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# loading packages
+
+```{r}
+options(scipen = 999)
+
+suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(psych))
+suppressPackageStartupMessages(library(readxl))
+suppressPackageStartupMessages(library(ggpubr))
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(confintr))
+suppressPackageStartupMessages(library(ppcor))
+suppressPackageStartupMessages(library(rcompanion))
+suppressPackageStartupMessages(library(effectsize))
+# suppressPackageStartupMessages(library(showtext))
+# suppressPackageStartupMessages(library(extrafont))
+suppressPackageStartupMessages(library(r2mlm))
+suppressPackageStartupMessages(library(tidyverse))
+
+
+# loadfonts(device = "all")
+# font_add(family = "Cooper Hewitt", regular = "CooperHewitt-Medium.otf")
+# showtext_auto()
+```
+
+# importing datasets
+
+```{r message=FALSE}
+dat_pre <- read_xlsx("data/dat_pre.xlsx")
+dat_processed <- read_csv("data/data_processed.csv")
+dat_unfiltered <- read_csv("data/data_unfiltered.csv")
+key <- read_csv("data/key.csv")
+```
+
+# filtering datasets
+
+```{r}
+# cleaning pre
+dat_pre_clean <- dat_pre %>% 
+  mutate(ended_pre = as_datetime(ended)) %>% 
+  select(session, ended_pre, age, gender, edu, cerq1, cerq9, cerq19, cerq29, panas1:panas20) %>% 
+  filter(!is.na(ended_pre), age != "under_18") %>% 
+  mutate(age = as.numeric(age),
+         rum_cerq = rowSums(select(., c("cerq1", "cerq9", "cerq19", "cerq29"))),
+         trait_NA = rowSums(select(., c("panas2", "panas4", "panas6", "panas7", "panas8", "panas11", "panas13", "panas15", "panas18", "panas20"))),
+         trait_PA = rowSums(select(., c("panas1", "panas3", "panas5", "panas9", "panas10", "panas12", "panas14", "panas16", "panas17", "panas19")))
+  ) %>% 
+  select(-cerq1, -cerq9, -cerq19, -cerq29) %>% 
+  left_join(key, by = c("session" = "session_emo")) %>% 
+  select(id_emo, everything()) %>%
+#   filter(!is.na(id_emo)) %>% 
+  rename(id = id_emo)
+
+trait_affect <- dat_pre_clean %>% 
+  select(trait_NA, trait_PA, id) %>%
+  write_csv("data/trait_affect.csv")
+
+# join trait affect to dat_processed
+dat_processed <- dat_processed %>%
+  left_join(trait_affect, by = "id")
+
+# filtering sample not included
+dat_processed_distinct <- dat_processed %>% 
+  select(id, ended_pre, age, gender, edu, rum_cerq, trait_NA, trait_PA) %>% 
+  distinct()
+
+dat_not_included <- dat_pre_clean %>% 
+  anti_join(dat_processed_distinct, by = c("age", "gender", "edu", "rum_cerq", "ended_pre"))
+
+# # cleaning up depression variables
+# depression_data <- cross_sectional_data %>% 
+#   left_join(key, by = c("session" = "session_emo")) %>% 
+#   select(session, id_emo, SCL_90_depr_pre_1:SCL_90_depr_pre_13)
+```
+
+
+# sample demographics
+
+## cross-sectional = initial
+
+```{r}
+# number and age of participants  
+dat_pre_clean %>% 
+  select(session, age) %>% 
+  summarise(N         = n(),
+            Mean      = round(mean(age), digits = 2),
+            Median    = round(median(age), digits = 2),
+            SD        = round(sd(age), digits = 2),
+            Range_min = min(age),
+            Range_max = max(age))
+
+# gender
+dat_pre_clean %>% 
+  select(gender) %>% 
+  table()
+  
+dat_pre_clean %>%
+  select(gender) %>% 
+  table() %>% 
+  prop.table() %>% `*`(100) %>% round(2)
+  
+  # 1 = Female
+  # 2 = Male
+  # 3 = Other
+  
+
+# education
+dat_pre_clean %>% 
+  select(edu) %>% 
+  table()
+  
+dat_pre_clean %>% 
+  select(edu) %>% 
+  table() %>% 
+  prop.table() %>% `*`(100) %>% round(2)
+
+  # 1 = Primary school or lower
+  # 3 = Vocational school without high school diploma
+  # 4 = High school diploma or equivalent 
+  # 5 = Bachelor's or Master's degree
+  # 6 = Doctorate (PhD)
+  # 7 = Other
+
+# trait rumination
+dat_pre_clean %>%
+  summarise(N         = n(),
+            Mean      = round(mean(rum_cerq), digits = 2),
+            Median    = round(median(rum_cerq), digits = 2),
+            SD        = round(sd(rum_cerq), digits = 2),
+            Range_min = min(rum_cerq),
+            Range_max = max(rum_cerq))
+```
+
+## not included
+
+```{r}
+# number and age of participants  
+dat_not_included %>% 
+  select(session, age) %>% 
+  summarise(N         = n(),
+            Mean      = round(mean(age), digits = 2),
+            Median    = round(median(age), digits = 2),
+            SD        = round(sd(age), digits = 2),
+            Range_min = min(age),
+            Range_max = max(age))
+
+# gender
+dat_not_included %>% 
+  select(gender) %>% 
+  table()
+  
+dat_not_included %>%
+  select(gender) %>% 
+  table() %>% 
+  prop.table() %>% `*`(100) %>% round(2)
+  
+  # 1 = Female
+  # 2 = Male
+  # 3 = Other
+  
+
+# education
+dat_not_included %>% 
+  select(edu) %>% 
+  table()
+  
+dat_not_included %>% 
+  select(edu) %>% 
+  table() %>% 
+  prop.table() %>% `*`(100) %>% round(2)
+
+  # 1 = Primary school or lower
+  # 3 = Vocational school without high school diploma
+  # 4 = High school diploma or equivalent 
+  # 5 = Bachelor's or Master's degree
+  # 6 = Doctorate (PhD)
+  # 7 = Other
+
+# trait rumination
+dat_not_included %>%
+  summarise(N         = n(),
+            Mean      = round(mean(rum_cerq), digits = 2),
+            Median    = round(median(rum_cerq), digits = 2),
+            SD        = round(sd(rum_cerq), digits = 2),
+            Range_min = min(rum_cerq),
+            Range_max = max(rum_cerq))
+```
+
+## proceeded to ESM phase = final sample
+
+```{r}
+# number and age of participants  
+dat_processed %>%
+    select(id, age) %>%
+    distinct() %>%
+    summarise(N         = n(),
+              Mean      = round(mean(age), digits = 2),
+              Median    = round(median(age), digits = 2),
+              SD        = round(sd(age), digits = 2),
+              Range_min = min(age),
+              Range_max = max(age))
+
+
+# gender
+dat_processed %>% 
+  select(id, gender) %>%
+  distinct() %>% 
+  select(gender) %>% 
+  table()
+
+dat_processed %>% 
+  select(id, gender) %>%
+  distinct() %>% 
+  select(gender) %>% 
+  table() %>% 
+  prop.table() %>% `*`(100) %>% round(2)
+
+# 1 = Female
+  # 2 = Male
+  # 3 = Other
+
+  
+# education
+dat_processed %>% 
+  select(id, edu) %>%
+  distinct() %>% 
+  select(edu) %>% 
+  table()
+
+dat_processed %>% 
+  select(id, edu) %>%
+  distinct() %>% 
+  select(edu) %>% 
+  table() %>% 
+  prop.table() %>% `*`(100) %>% round(2)
+  
+  # 1 = Primary school or lower
+  # 3 = Vocational school without high school diploma
+  # 4 = High school diploma or equivalent 
+  # 5 = Bachelor's or Master's degree
+  # 6 = Doctorate (PhD)
+  # 7 = Other
+
+
+# trait rumination
+dat_processed %>%
+  select(id, age, gender, edu, rum_cerq) %>% 
+  distinct() %>% 
+  summarise(N         = n(),
+            Mean      = round(mean(rum_cerq), digits = 2),
+            Median    = round(median(rum_cerq), digits = 2),
+            SD        = round(sd(rum_cerq), digits = 2),
+            Range_min = min(rum_cerq),
+            Range_max = max(rum_cerq))
+```
+
+# descriptives
+
+## descriptives of ESM surveys in final sample
+
+```{r}
+# total number of completed esm surveys
+dat_processed %>%
+  distinct() %>% 
+  summarise(n_id  = length(unique(id)),
+            n_obs = length(sad))
+
+
+#...and per capita
+dat_processed %>%
+  distinct() %>% 
+  group_by(id) %>% 
+  summarise(n_obs = length(date_emotics)) %>% 
+  ungroup() %>% 
+  summarise(max_n_obs    = max(n_obs),
+            min_n_obs    = min(n_obs),
+            mean_n_obs   = mean(n_obs),
+            median_n_obs = median(n_obs),
+            sd_n_obs     = sd(n_obs))
+
+
+# descriptives of rumination 
+  # state rumination
+  dat_processed %>% 
+    select(id, day, beep, regu_rumination) %>%
+    summarise(
+      max_state_rumi    = max(regu_rumination),
+      min_state_rumi    = min(regu_rumination),
+      mean_state_rumi   = mean(regu_rumination),
+      median_state_rumi = median(regu_rumination),
+      sd_state_rumi     = sd(regu_rumination)
+  )
+  
+  # mean state rumination
+  dat_processed %>% 
+    select(id, day, beep, mean_state_rumi) %>%
+    summarise(
+      max_mean_state_rumi    = max(mean_state_rumi),
+      min_mean_state_rumi    = min(mean_state_rumi),
+      mean_mean_state_rumi   = mean(mean_state_rumi),
+      median_mean_state_rumi = median(mean_state_rumi),
+      sd_mean_state_rumi     = sd(mean_state_rumi)
+  )
+
+
+# descriptives of negative affect
+dat_processed %>%
+  select(id, day, beep, sad, afraid, unrested, angry) %>% 
+  mutate(negaff_raw_sum = rowSums(select(., c("sad", "afraid", "unrested", "angry")))) %>% 
+  summarise(
+    max_negaff    = max(negaff_raw_sum),
+    min_negaff    = min(negaff_raw_sum),
+    mean_negaff   = mean(negaff_raw_sum),
+    median_negaff = median(negaff_raw_sum),
+    sd_negaff     = sd(negaff_raw_sum)
+  )
+
+
+# descriptives of negative affect
+dat_processed %>%
+  select(id, day, beep, calm, enthusiastic, cheerful, active) %>% 
+  mutate(posaff_raw_sum = rowSums(select(., c("calm", "enthusiastic", "cheerful", "active")))) %>% 
+  summarise(
+    max_negaff    = max(posaff_raw_sum),
+    min_negaff    = min(posaff_raw_sum),
+    mean_negaff   = mean(posaff_raw_sum),
+    median_negaff = median(posaff_raw_sum),
+    sd_negaff     = sd(posaff_raw_sum)
+  )
+```
+
+## statistical tests to compare initial and final samples
+
+```{r}
+# test for median age
+  # normality test
+  shapiro.test(dat_not_included$age)
+  shapiro.test(dat_processed_distinct$age)
+    # -> normality not assumed -> mann-whitney
+  
+  # mann-whitney test
+  wilcox.test(dat_not_included$age, dat_processed_distinct$age)
+  
+
+# test for gender distribution
+  gender_compare_not_included <- tibble(gender = dat_not_included$gender, group = "not_included")
+  gender_compare_final <- tibble(gender = dat_processed_distinct$gender, group = "final")
+  gender_compare <- gender_compare_not_included %>% bind_rows(gender_compare_final)
+  
+  chisq.test(gender_compare$group, gender_compare$gender)
+
+
+# test for education
+  edu_compare_not_included <- tibble(edu = dat_not_included$edu, group = "not_included")
+  edu_compare_final <- tibble(edu = dat_processed_distinct$edu, group = "final")
+  edu_compare <- edu_compare_not_included %>% bind_rows(edu_compare_final)
+  
+  edu_chisq <- chisq.test(edu_compare$group, edu_compare$edu)
+  cramersv(edu_chisq)
+  
+
+# test for median mss scores
+  # normality test
+  shapiro.test(dat_not_included$rum_cerq)
+  shapiro.test(dat_processed_distinct$rum_cerq)
+    # -> normality not assumed -> mann-whitney
+  
+  # mann-whitney test
+  wilcox.test(dat_not_included$rum_cerq, dat_processed_distinct$rum_cerq)
+```
+
+# calculating compliance in final sample
+
+## compliance on ESM surveys
+
+```{r}
+# filter dataset
+dat_unfiltered <- dat_unfiltered %>% 
+  filter(!is.na(day) & day != 0)
+
+# identify day of quitting
+dat_maxday_esm <- dat_unfiltered %>% 
+  select(id_emo, date_emotics, day) %>% 
+  filter(!is.na(date_emotics)) %>% 
+  group_by(id_emo) %>% 
+  summarise(max_day_esm = max(day)) %>% 
+  write_csv("data/esm_maxday.csv")
+
+# distribution of maximum day
+dat_maxday_esm %>% 
+  summarise(median_maxday = median(max_day_esm, na.rm = T),
+            mean_maxday   = mean(max_day_esm, na.rm = T),
+            sd_maxday     = sd(max_day_esm, na.rm = T),
+            min_maxday    = min(max_day_esm, na.rm = T),
+            max_maxday    = max(max_day_esm, na.rm = T)
+  )
+
+ggplot(dat_maxday_esm) +
+  geom_histogram(aes(max_day_esm), bins = 15, fill = "#A9A9A9", color = "#5B5C5C") +
+  theme_classic() +
+  labs(
+    x = "Number of days in ESM Phase",
+    y = "Number of Participants"
+  ) +
+  theme(
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12)
+    )
+
+
+
+dat_unfiltered <- dat_unfiltered %>% 
+  left_join(dat_maxday_esm, by = "id_emo") 
+
+
+# calculating compliance
+dat_unfiltered %>%
+  select(id_emo, date_emotics, day, beep, max_day_esm) %>%
+  group_by(id_emo) %>%
+  summarise(completed = sum(!is.na(date_emotics)),
+            all = max_day_esm * 8, 
+            esm_compl_final = (completed / all) * 100
+  ) %>% write_csv("data/esm_completed.csv") %>% 
+  ungroup() %>%
+  summarise(median_final_compl = median(esm_compl_final, na.rm = T),
+            mean_final_compl   = mean(esm_compl_final, na.rm = T),
+            sd_final_compl     = sd(esm_compl_final, na.rm = T),
+            min_final_compl    = min(esm_compl_final, na.rm = T),
+            max_final_compl    = max(esm_compl_final, na.rm = T)
+  )
+
+# distribution of the number of completed surveys
+dat_unfiltered_figure <- dat_unfiltered %>% 
+  select(id_emo, date_emotics, day, beep, max_day_esm) %>%
+  group_by(id_emo) %>%
+  reframe(completed = sum(!is.na(date_emotics)),
+            all = max_day_esm * 8, 
+            esm_compl_final = (completed / all) * 100
+  ) %>% 
+  ungroup() %>% 
+  distinct()
+
+dat_unfiltered_figure %>% select(esm_compl_final) %>% 
+  left_join(dat_unfiltered, by = "id_emo") %>% 
+  select(id_emo, max_day_esm, esm_compl_final, chron_neuro, chron_psych) %>%
+  
+ggplot(dat_unfiltered_figure) +
+  geom_histogram(aes(esm_compl_final), bins = 20, fill = "#A9A9A9", color = "#5B5C5C") +
+  theme_classic() +
+  labs(
+    x = "Compliance Rate (%)",
+    y = "Number of Participants"
+  ) +
+  theme(
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12)
+    )
+```
+
+## compliance and demographic factors
+### correlation between number of days in study and age
+```{r}
+dat_unfiltered <- dat_unfiltered %>% 
+  left_join(dat_maxday_esm, by = "id_emo")
+
+corr_compliance_age <- dat_unfiltered %>% 
+  select(id = id_emo, age, max_day_esm = max_day_esm.x) %>% 
+  distinct() %>% 
+  select(-id)
+
+# test for correlation
+shapiro.test(corr_compliance_age$age)
+shapiro.test(corr_compliance_age$max_day_esm)
+  # normality not assumed
+
+ci_cor(corr_compliance_age, probs = c(0.025, 0.975), method = "spearman", type = "bootstrap")
+
+cor.test(corr_compliance_age$age, corr_compliance_age$max_day_esm, method = "spearman")
+
+# visualization
+corrplot_compliance_age <- 
+  ggplot(corr_compliance_age, aes(age, max_day_esm)) +
+    geom_point(alpha = 0.5, position = "jitter") +
+    geom_smooth(method = "lm", fill = "#C7728F", color = "#8E2438") +
+    theme_classic() +
+    labs(x = "Age",
+         y = "Days spent in study"
+    ) +
+    theme(
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 12),
+    panel.grid.minor.y = element_blank(),
+    axis.line = element_line()
+    )
+corrplot_compliance_age
+```
+
+### difference in compliance between sexes
+```{r}
+corr_compliance_sex <- dat_unfiltered %>% 
+  select(id = id_emo, sex = gender, max_day_esm = max_day_esm.x) %>% 
+  distinct() %>% 
+  filter(sex != 3) %>%
+  select(-id)
+  
+df_sex1 <- corr_compliance_sex %>% 
+  filter(sex == 1)
+
+df_sex2 <- corr_compliance_sex %>% 
+  filter(sex == 2)
+
+# test for median compliance
+  # normality test
+  shapiro.test(df_sex1$max_day_esm)
+  shapiro.test(df_sex2$max_day_esm)
+    # -> normality not assumed -> mann-whitney
+  
+  # mann-whitney test
+result <- wilcox.test(df_sex1$max_day_esm, df_sex2$max_day_esm, exact = FALSE)
+effectsize(result, ci = 0.95)
+  
+# descriptives
+df_sex1 %>%
+  reframe(
+    N         = n(),
+    Mean      = round(mean(max_day_esm), digits = 2),
+    Median    = round(median(max_day_esm), digits = 2),
+    SD        = round(sd(max_day_esm), digits = 2),
+    Range_min = min(max_day_esm),
+    Range_max = max(max_day_esm)
+  )
+
+df_sex2 %>%
+  reframe(
+    N         = n(),
+    Mean      = round(mean(max_day_esm), digits = 2),
+    Median    = round(median(max_day_esm), digits = 2),
+    SD        = round(sd(max_day_esm), digits = 2),
+    Range_min = min(max_day_esm),
+    Range_max = max(max_day_esm)
+  )
+  
+# visualization
+corr_compliance_sex <- corr_compliance_sex %>%
+  mutate(sex = factor(sex, levels = c(1, 2), labels = c("Female", "Male")))
+
+ggplot(corr_compliance_sex, aes(x = sex, y = max_day_esm)) +
+  geom_violin(trim = FALSE, fill = "lightblue") +
+  geom_boxplot(width = 0.2) +
+  theme_minimal() +
+  labs(x = "Sex", y = "Days spent in study") +
+  theme_classic()
+```
+
+### difference in compliance along depressive symptoms
+```{r}
+corr_compliance_depression <- dat_unfiltered %>% 
+  select(id_emo, diary_counter, depression_1:depression_3, depression_4, depression_5, depression_6:depression_10, depression_11:depression_13, max_day_esm = max_day_esm.x)
+
+corr_compliance_depression <- corr_compliance_depression %>% 
+  filter(!is.na(depression_1)) %>% 
+  distinct()
+
+corr_compliance_depression <- corr_compliance_depression %>%
+  rowwise() %>%
+  mutate(depression_sum = sum(c_across(depression_1:depression_13))) %>%
+  ungroup() %>%
+  select(id_emo, diary_counter, depression_sum,  max_day_esm)
+  
+corr_compliance_depression <- corr_compliance_depression %>% 
+  group_by(id_emo) %>%
+  reframe(mean_depression = mean(depression_sum),
+          max_day_esm = max(max_day_esm)
+  ) %>%
+  ungroup() %>% 
+  select(-id_emo)
+
+# test for correlation
+shapiro.test(corr_compliance_depression$mean_depression)
+shapiro.test(corr_compliance_depression$max_day_esm)
+  # normality not assumed
+ci_cor(corr_compliance_depression, probs = c(0.025, 0.975), method = "spearman", type = "bootstrap")
+cor.test(corr_compliance_depression$mean_depression, corr_compliance_depression$max_day_esm, method = "spearman")
+
+# visualization
+corrplot_compliance_depression <- 
+  ggplot(corr_compliance_depression, aes(mean_depression, max_day_esm)) +
+    geom_point(alpha = 0.5, position = "jitter") +
+    geom_smooth(method = "lm", fill = "#C7728F", color = "#8E2438") +
+    theme_classic() +
+    labs(x = "Mean SCL-90 depression score",
+         y = "Days spent in study"
+    ) +
+    theme(
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 12),
+    panel.grid.minor.y = element_blank(),
+    axis.line = element_line()
+    )
+corrplot_compliance_depression
+```
+
+
+### difference in compliance along diagnosis
+```{r}
+corr_compliance_diagn <- dat_unfiltered %>% 
+  select(id = id_emo, chron_neuro, chron_psych, max_day_esm = max_day_esm.x) %>% 
+  distinct() %>%
+  select(-id)
+
+# neurogical diagnosis
+df_neuro_yes <- corr_compliance_diagn %>% 
+  filter(chron_neuro == 1)
+
+df_neuro_no <- corr_compliance_diagn %>% 
+  filter(chron_neuro == 0)
+
+# test for median compliance
+  # normality test
+  shapiro.test(df_neuro_yes$max_day_esm)
+  shapiro.test(df_neuro_no$max_day_esm)
+    # -> normality not assumed -> mann-whitney
+  
+  # mann-whitney test
+result_1 <- wilcox.test(df_neuro_yes$max_day_esm, df_neuro_no$max_day_esm, exact = FALSE)
+effectsize(result_1, ci = 0.95)
+  
+# visualization
+corr_compliance_diagn <- corr_compliance_diagn %>%
+  mutate(chron_neuro = factor(chron_neuro, levels = c(0, 1), labels = c("No", "Yes")))
+
+ggplot(corr_compliance_diagn, aes(x = chron_neuro, y = max_day_esm)) +
+  geom_violin(trim = FALSE, fill = "lightblue") +
+  geom_boxplot(width = 0.2) +
+  theme_minimal() +
+  labs(x = "Diagnosis", y = "Days spent in study") +
+  theme_classic()
+
+# psychiatric diagnosis
+df_psych_yes <- corr_compliance_diagn %>% 
+  filter(chron_psych == 1)
+
+df_psych_no <- corr_compliance_diagn %>%
+  filter(chron_psych == 0)
+
+# test for median compliance
+  # normality test
+  shapiro.test(df_psych_yes$max_day_esm)
+  shapiro.test(df_psych_no$max_day_esm)
+    # -> normality not assumed -> mann-whitney
+  
+  # mann-whitney test
+result_2 <- wilcox.test(df_psych_yes$max_day_esm, df_psych_no$max_day_esm, exact = FALSE)
+effectsize(result_2, ci = 0.95)
+
+# visualization
+corr_compliance_diagn <- corr_compliance_diagn %>%
+  mutate(chron_psych = factor(chron_psych, levels = c(0, 1), labels = c("No", "Yes")))
+
+ggplot(corr_compliance_diagn, aes(x = chron_psych, y = max_day_esm)) +
+  geom_violin(trim = FALSE, fill = "lightblue") +
+  geom_boxplot(width = 0.2) +
+  theme_minimal() +
+  labs(x = "Diagnosis", y = "Days spent in study") +
+  theme_classic()
+```
+
+
+# common method variance? correlation between trait/mean state rumination and trait affect
+## NA
+### trait rumi and trait NA
+```{r}
+corr_trait_rumi_NA <- dat_processed %>% 
+  left_join(trait_affect, by = "id") %>% 
+  select(id, trait_rumination, trait_NA) %>%
+  distinct() %>%
+  select(-id)
+
+shapiro.test(corr_trait_rumi_NA$trait_NA)
+shapiro.test(corr_trait_rumi_NA$trait_rumination)
+  # normality not assumed
+
+ci_cor(corr_trait_rumi_NA, probs = c(0.025, 0.975), method = "spearman", type = "bootstrap")
+
+cor.test(corr_trait_rumi_NA$trait_NA, corr_trait_rumi_NA$trait_rumination, method = "spearman")
+
+corrplot_trait_rumi_NA <- 
+  ggplot(corr_trait_rumi_NA, aes(trait_NA, trait_rumination)) +
+    geom_point(alpha = 0.5, position = "jitter") +
+    geom_smooth(method = "lm", fill = "#C7728F", color = "#8E2438") +
+    theme_classic() +
+    labs(x = "Trait Negative Affect",
+         y = "Trait Rumination"
+    ) +
+    theme(
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 12),
+    panel.grid.minor.y = element_blank(),
+    axis.line = element_line()
+    )
+corrplot_trait_rumi_NA
+```
+
+### mean state rumi and trait NA
+```{r}
+corr_mean_state_rumi_NA <- dat_processed %>% 
+  left_join(trait_affect, by = "id") %>% 
+  select(id, mean_state_rumi_grand_centered, trait_NA) %>%
+  distinct() %>%
+  select(-id)
+
+shapiro.test(corr_mean_state_rumi_NA$trait_NA)
+shapiro.test(corr_mean_state_rumi_NA$mean_state_rumi_grand_centered)
+  # normality not assumed
+
+ci_cor(corr_mean_state_rumi_NA, probs = c(0.025, 0.975), method = "spearman", type = "bootstrap")
+
+cor.test(corr_mean_state_rumi_NA$trait_NA, corr_mean_state_rumi_NA$mean_state_rumi_grand_centered, method = "spearman")
+
+corrplot_mean_state_rumi_NA <- 
+  ggplot(corr_mean_state_rumi_NA, aes(trait_NA, mean_state_rumi_grand_centered)) +
+    geom_point(alpha = 0.5, position = "jitter") +
+    geom_smooth(method = "lm", fill = "#C7728F", color = "#8E2438") +
+    theme_classic() +
+    labs(x = "Trait Negative Affect",
+         y = "Mean State Rumination"
+    ) +
+    theme(
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 12),
+    panel.grid.minor.y = element_blank(),
+    axis.line = element_line()
+    )
+corrplot_mean_state_rumi_NA
+```
+
+## PA
+### trait and trait NA
+```{r}
+corr_trait_rumi_PA <- dat_processed %>% 
+  left_join(trait_affect, by = "id") %>% 
+  select(id, trait_rumination, trait_PA) %>%
+  distinct() %>%
+  select(-id)
+
+shapiro.test(corr_trait_rumi_PA$trait_PA)
+shapiro.test(corr_trait_rumi_PA$trait_rumination)
+  # normality not assumed
+
+ci_cor(corr_trait_rumi_PA, probs = c(0.025, 0.975), method = "spearman", type = "bootstrap")
+
+cor.test(corr_trait_rumi_PA$trait_PA, corr_trait_rumi_PA$trait_rumination, method = "spearman")
+
+corrplot_trait_rumi_PA <- 
+  ggplot(corr_trait_rumi_PA, aes(trait_PA, trait_rumination)) +
+    geom_point(alpha = 0.5, position = "jitter") +
+    geom_smooth(method = "lm", fill = "#C7728F", color = "#8E2438") +
+    theme_classic() +
+    labs(x = "Trait Positive Affect",
+         y = "Trait Rumination"
+    ) +
+    theme(
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 12),
+    panel.grid.minor.y = element_blank(),
+    axis.line = element_line()
+    )
+corrplot_trait_rumi_PA
+```
+
+## mean state rumi and trait PA
+```{r}
+corr_mean_state_rumi_PA <- dat_processed %>% 
+  left_join(trait_affect, by = "id") %>% 
+  select(id, mean_state_rumi_grand_centered, trait_PA) %>%
+  distinct() %>%
+  select(-id)
+
+shapiro.test(corr_mean_state_rumi_PA$trait_PA)
+shapiro.test(corr_mean_state_rumi_PA$mean_state_rumi_grand_centered)
+  # normality not assumed
+
+ci_cor(corr_mean_state_rumi_PA, probs = c(0.025, 0.975), method = "spearman", type = "bootstrap")
+
+cor.test(corr_mean_state_rumi_PA$trait_PA, corr_mean_state_rumi_PA$mean_state_rumi_grand_centered, method = "spearman")
+
+corrplot_mean_state_rumi_PA <- 
+  ggplot(corr_mean_state_rumi_PA, aes(trait_PA, mean_state_rumi_grand_centered)) +
+    geom_point(alpha = 0.5, position = "jitter") +
+    geom_smooth(method = "lm", fill = "#C7728F", color = "#8E2438") +
+    theme_classic() +
+    labs(x = "Trait Positive Affect",
+         y = "Mean State Rumination"
+    ) +
+    theme(
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 12),
+    panel.grid.minor.y = element_blank(),
+    axis.line = element_line()
+    )
+corrplot_mean_state_rumi_PA
+```
+
+
+# correlation between trait and state rumination measures
+
+## correlation
+
+```{r}
+corr_rumi <- dat_processed %>% 
+  select(id, mean_state_rumi_grand_centered, trait_rumination) %>% 
+  distinct() %>% 
+  select(-id)
+
+shapiro.test(corr_rumi$trait_rumination)
+shapiro.test(corr_rumi$mean_state_rumi_grand_centered)
+# normality not assumed
+
+# corr_coeff <- cor.test(corr_rumi$trait_rumination, corr_rumi$mean_state_rumi, method = "spearman")
+
+ci_cor(corr_rumi, probs = c(0.025, 0.975), method = "spearman", type = "bootstrap")
+
+corr_rumi_z <- dat_processed %>% 
+  mutate(mean_state_rumi_z = scale(mean_state_rumi),
+         rum_cerq_z = scale(trait_rumination)
+         ) %>% 
+  select(id, mean_state_rumi_z, rum_cerq_z) %>% 
+  distinct() %>% 
+  select(-id)
+```
+
+## partial correlation
+
+```{r}
+# filter and join
+dat_unfiltered_maxday <- dat_unfiltered %>% 
+  select(id_emo, max_day_esm) %>% 
+  distinct()
+
+dat_processed <- dat_processed %>% 
+  left_join(
+    dat_unfiltered_maxday, by = join_by(id == id_emo)
+            )
+
+corr_rumi_partial <- dat_processed %>% 
+  select(id, mean_state_rumi_grand_centered, trait_rumination, max_day_esm) %>% 
+  distinct() %>% 
+  select(-id)
+
+# partial correlation test
+pcor(corr_rumi_partial, method = "spearman")
+
+# semi-partial correlation test
+spcor(corr_rumi_partial, method= "spearman")
+```
+
+## visualization
+
+```{r}
+corrplot <- 
+  ggplot(corr_rumi, aes(trait_rumination, mean_state_rumi_grand_centered)) +
+    geom_point(alpha = 0.5, position = "jitter") +
+    # geom_smooth(method = "lm", fill = "#BE7E9D", color = "#9b0a36") +
+    geom_smooth(method = "lm", fill = "#C7728F", color = "#8E2438") +
+    theme_classic() +
+    labs(x = "Global Self-report Rumination",
+         y = "Mean State Rumination"
+    ) +
+    theme(
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 12),
+    panel.grid.minor.y = element_blank(),
+    axis.line = element_line()
+    )
+corrplot
+
+# ggsave("Figure2.jpg", corrplot, width = 15, height = 10, dpi = 600)
+
+# HU
+ggplot(corr_rumi, aes(trait_rumination, mean_state_rumi_grand_centered)) +
+  geom_point(alpha = 0.5, position = "jitter") +
+  geom_smooth(method = "lm", fill = "#B085BB", color = "#823D93") +
+  theme_classic() +
+  labs(x = "Vonás-rumináció",
+       y = "Állapot-rumináció\n(személyenként átlagolva)"
+  ) +
+  theme(
+    axis.title = element_text(size = 12),
+    text = element_text(family = "Cooper Hewitt")
+  )
+```
